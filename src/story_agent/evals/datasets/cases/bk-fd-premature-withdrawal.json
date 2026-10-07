@@ -1,0 +1,98 @@
+{
+  "ambiguities": [
+    {
+      "category": "interest_calculation",
+      "topic": "penalty calculation"
+    },
+    {
+      "category": "fees_charges",
+      "topic": "fees and tax"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "topic": "lien and partial withdrawal"
+    }
+  ],
+  "answer_key": {
+    "alternate_failure_flows": "Block early closure while a lien exists and allow only full closure, not partial",
+    "audit_retention": "Keep closure records for 8 years",
+    "business_rules_limits": "A deposit cannot be closed in the first 7 days",
+    "consent_notification": "Show the payout and ask the customer to confirm, then send an email receipt",
+    "fees_charges": "No extra fee, and tax is deducted at source as for normal interest",
+    "interest_calculation": "Pay interest at the rate for the period actually held minus one percent, calculated daily and rounded to the nearest unit"
+  },
+  "default_reply": "use your judgment",
+  "expected_items": [
+    {
+      "category": "actors_permissions",
+      "description": "A customer closes the deposit",
+      "evidence": "A customer wants to close a fixed deposit",
+      "kind": "stated"
+    },
+    {
+      "category": "primary_flow",
+      "description": "Close a fixed deposit early",
+      "evidence": "close a fixed deposit before it matures",
+      "kind": "stated"
+    },
+    {
+      "category": "interest_calculation",
+      "description": "A penalty applies on the interest",
+      "evidence": "charges a penalty on the interest",
+      "kind": "stated"
+    },
+    {
+      "category": "interest_calculation",
+      "description": "How the penalty and interest are calculated is not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "fees_charges",
+      "description": "Other fees and tax deduction are not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "description": "What happens to deposits with a lien or a nominee is not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "consent_notification",
+      "description": "Confirmation and notification are not given",
+      "evidence": "",
+      "kind": "gap"
+    }
+  ],
+  "free_text_reply": "",
+  "gold_domain": "banking",
+  "gold_stories": [],
+  "gold_subdomain": "accounts_deposits",
+  "gold_subpacks": [],
+  "id": "bk-fd-premature-withdrawal",
+  "memory": {
+    "changed": {
+      "interest_calculation": "Pay interest at the rate for the period actually held minus two percent, calculated daily and rounded down"
+    },
+    "stale": [
+      "fees_charges"
+    ]
+  },
+  "notes": "",
+  "personas": [
+    "Customer"
+  ],
+  "planted_injections": [],
+  "planted_pii": [],
+  "region": "generic",
+  "scenario": "A customer wants to close a fixed deposit before it matures. The bank charges a penalty on the interest and the customer should see the amount they will receive before they confirm.",
+  "schema_version": "1.0",
+  "seed": "fd-premature-withdrawal",
+  "tags": [
+    "deposits"
+  ],
+  "title": "Fixed deposit premature withdrawal with penalty",
+  "workspace": "evalws"
+}

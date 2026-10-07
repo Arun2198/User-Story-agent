@@ -1,0 +1,94 @@
+{
+  "ambiguities": [
+    {
+      "category": "business_rules_limits",
+      "topic": "return window and exclusions"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "topic": "no receipt or damaged"
+    },
+    {
+      "category": "notifications",
+      "topic": "refund notification"
+    }
+  ],
+  "answer_key": {
+    "alternate_failure_flows": "Without a receipt, offer store credit only; damaged items go to a manager for a decision",
+    "business_rules_limits": "Returns are accepted within 30 days, and sale items and opened hygiene products are excluded",
+    "data_records": "Record the item, the reason, the assistant and the refund method",
+    "notifications": "Email the customer when the refund is issued",
+    "out_of_scope": "Online returns are out of scope"
+  },
+  "default_reply": "use your judgment",
+  "expected_items": [
+    {
+      "category": "actors_permissions",
+      "description": "Customers and store assistants",
+      "evidence": "A store assistant checks the item",
+      "kind": "stated"
+    },
+    {
+      "category": "primary_flow",
+      "description": "Return, check, refund",
+      "evidence": "Customers return items to a shop",
+      "kind": "stated"
+    },
+    {
+      "category": "business_rules_limits",
+      "description": "A return window applies",
+      "evidence": "within a set number of days",
+      "kind": "stated"
+    },
+    {
+      "category": "business_rules_limits",
+      "description": "The number of days and excluded items are not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "description": "Items without a receipt or damaged items are not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "notifications",
+      "description": "Customer notification of the refund is not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "data_records",
+      "description": "What is recorded about a return is not given",
+      "evidence": "",
+      "kind": "gap"
+    }
+  ],
+  "free_text_reply": "",
+  "gold_domain": "generic",
+  "gold_stories": [],
+  "gold_subdomain": null,
+  "gold_subpacks": [],
+  "id": "gn-retail-returns",
+  "memory": {
+    "changed": {},
+    "stale": []
+  },
+  "notes": "",
+  "personas": [
+    "Customer",
+    "Store assistant"
+  ],
+  "planted_injections": [],
+  "planted_pii": [],
+  "region": "generic",
+  "scenario": "Customers return items to a shop within a set number of days and expect a refund. A store assistant checks the item and the receipt before the refund is given.",
+  "schema_version": "1.0",
+  "seed": "retail-returns",
+  "tags": [
+    "generic"
+  ],
+  "title": "Retail returns (generic pack)",
+  "workspace": "evalws"
+}

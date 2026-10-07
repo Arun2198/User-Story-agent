@@ -1,0 +1,110 @@
+{
+  "ambiguities": [
+    {
+      "category": "alternate_failure_flows",
+      "topic": "retry count and spacing"
+    },
+    {
+      "category": "limits_velocity",
+      "topic": "instruction limit"
+    },
+    {
+      "category": "idempotency",
+      "topic": "double payment prevention"
+    },
+    {
+      "category": "consent_notification",
+      "topic": "payment notifications"
+    }
+  ],
+  "answer_key": {
+    "alternate_failure_flows": "Retry three times at one day intervals and then cancel the attempt and tell the customer",
+    "audit_retention": "Keep instruction and payment records for 8 years",
+    "consent_notification": "Notify the customer by SMS before the due date and after each success or failure",
+    "cutoff_settlement": "Payments after the cut-off are sent on the next business day",
+    "idempotency": "Each instruction cycle has one reference and a retry reuses it, so a payment already made is not repeated",
+    "limits_velocity": "An instruction may not exceed 25,000 rupees per payment",
+    "neft_rtgs_imps_rules": "Use NEFT only when UPI mandates are not supported by the biller"
+  },
+  "default_reply": "use your judgment",
+  "expected_items": [
+    {
+      "category": "actors_permissions",
+      "description": "A customer sets up payments",
+      "evidence": "A customer sets up a standing instruction",
+      "kind": "stated"
+    },
+    {
+      "category": "primary_flow",
+      "description": "Recurring monthly bill payment",
+      "evidence": "pay a monthly electricity bill",
+      "kind": "stated"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "description": "Retry after a failed payment",
+      "evidence": "If a payment fails, the system should try again",
+      "kind": "stated"
+    },
+    {
+      "category": "upi_rules",
+      "description": "UPI mandates are used",
+      "evidence": "UPI mandates or NEFT",
+      "kind": "stated"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "description": "Number and spacing of retries are not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "limits_velocity",
+      "description": "Maximum amount per instruction is not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "idempotency",
+      "description": "Preventing a double payment on retry is not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "consent_notification",
+      "description": "Notifications on success or failure are not given",
+      "evidence": "",
+      "kind": "gap"
+    }
+  ],
+  "free_text_reply": "",
+  "gold_domain": "banking",
+  "gold_stories": [],
+  "gold_subdomain": "payments_transfers",
+  "gold_subpacks": [
+    "india_rails"
+  ],
+  "id": "bk-standing-instruction",
+  "memory": {
+    "changed": {
+      "alternate_failure_flows": "Retry twice at two day intervals and then cancel the attempt and tell the customer"
+    },
+    "stale": []
+  },
+  "notes": "",
+  "personas": [
+    "Customer"
+  ],
+  "planted_injections": [],
+  "planted_pii": [],
+  "region": "india",
+  "scenario": "A customer sets up a standing instruction to pay a monthly electricity bill from their savings account. If a payment fails, the system should try again. The bill is paid through UPI mandates or NEFT.",
+  "schema_version": "1.0",
+  "seed": "standing-instruction",
+  "tags": [
+    "payments",
+    "india"
+  ],
+  "title": "Recurring bill payment with retries (India)",
+  "workspace": "evalws"
+}

@@ -1,0 +1,98 @@
+{
+  "ambiguities": [
+    {
+      "category": "sla_escalation",
+      "topic": "times and escalation"
+    },
+    {
+      "category": "dispute_handling",
+      "topic": "categories and ownership"
+    },
+    {
+      "category": "data_privacy",
+      "topic": "visibility of details"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "topic": "reopening"
+    }
+  ],
+  "answer_key": {
+    "alternate_failure_flows": "A customer may reopen a closed complaint within 30 days with new information",
+    "audit_retention": "Keep complaint records for 8 years",
+    "data_privacy": "Only the assigned team, their supervisor and the customer can see the details",
+    "dispute_handling": "Complaints are categorised as card, payment, account or service and owned by the team for that category",
+    "sla_escalation": "Acknowledge within one business day and resolve within ten, escalating to a supervisor at day five and to the head of service at day eight"
+  },
+  "default_reply": "use your judgment",
+  "expected_items": [
+    {
+      "category": "actors_permissions",
+      "description": "Customer and call centre agent",
+      "evidence": "through the call centre",
+      "kind": "stated"
+    },
+    {
+      "category": "primary_flow",
+      "description": "Raise and track a complaint",
+      "evidence": "raises a complaint",
+      "kind": "stated"
+    },
+    {
+      "category": "sla_escalation",
+      "description": "A service level applies",
+      "evidence": "a service level to resolve complaints in time",
+      "kind": "stated"
+    },
+    {
+      "category": "sla_escalation",
+      "description": "The times and escalation steps are not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "dispute_handling",
+      "description": "Categories and ownership of complaints are not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "data_privacy",
+      "description": "Who can see complaint details is not given",
+      "evidence": "",
+      "kind": "gap"
+    },
+    {
+      "category": "alternate_failure_flows",
+      "description": "Reopening and rejected complaints are not given",
+      "evidence": "",
+      "kind": "gap"
+    }
+  ],
+  "free_text_reply": "",
+  "gold_domain": "banking",
+  "gold_stories": [],
+  "gold_subdomain": "customer_service",
+  "gold_subpacks": [],
+  "id": "bk-complaint-sla",
+  "memory": {
+    "changed": {},
+    "stale": []
+  },
+  "notes": "",
+  "personas": [
+    "Customer",
+    "Call centre agent"
+  ],
+  "planted_injections": [],
+  "planted_pii": [],
+  "region": "generic",
+  "scenario": "A customer raises a complaint through the call centre and later wants to track its status. The bank has a service level to resolve complaints in time.",
+  "schema_version": "1.0",
+  "seed": "complaint-sla",
+  "tags": [
+    "service"
+  ],
+  "title": "Complaint tracked against an SLA",
+  "workspace": "evalws"
+}
