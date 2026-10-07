@@ -3,6 +3,10 @@
 # environment variable named by api_key_env; it is never stored in a file.
 base_url: https://integrate.api.nvidia.com/v1
 api_key_env: NVIDIA_API_KEY
+# A model can use its own key: model id -> environment variable. If that variable is not set
+# the model uses the key above.
+model_api_key_env:
+  nvidia/nemotron-3-ultra-550b-a55b: NVIDIA_API_KEY_JUDGE
 # How the JSON schema is enforced. Models differ, so the default tries each in turn and keeps
 # the first one the model accepts:
 #   guided_json: NVIDIA's nvext.guided_json     json_schema: OpenAI-style response_format
@@ -16,9 +20,9 @@ structured_output: auto
 extra_body: {}
 temperature: 0
 # Model ids get retired (a 410 error says so). List the live ones with: story-agent models
-# The judge should be a different, stronger model than the generator once you have one.
+# The judge is a different, larger model than the generator, so it does not mark its own work.
 generator: nvidia/nemotron-3.5-lightning-30b-a3b
-judge: nvidia/nemotron-3.5-lightning-30b-a3b
+judge: nvidia/nemotron-3-ultra-550b-a55b
 # Per-call output limit. null sends none, so the server's default applies and a reasoning
 # model is not cut off while it thinks. Set a number to cap every call.
 max_tokens: null
@@ -29,3 +33,4 @@ backoff_base_s: 1.0
 # free tier does not bill per token; set your real rate if you move to a paid host.
 prices:
   nvidia/nemotron-3.5-lightning-30b-a3b: { input: 0.5, output: 0.5 }
+  nvidia/nemotron-3-ultra-550b-a55b: { input: 1.0, output: 1.0 }

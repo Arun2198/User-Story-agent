@@ -60,9 +60,13 @@ The setting lasts for that terminal window. Where the key goes, by setup:
 | Where you run it | Where to put the key |
 |---|---|
 | Your computer | `export NVIDIA_API_KEY=...` in the terminal (or your shell profile) |
-| GitHub Codespaces | Settings, Codespaces, Secrets, `NVIDIA_API_KEY` (Part 2, Option A) |
+| GitHub Codespaces | Settings, Codespaces, Secrets, `NVIDIA_API_KEY` (and `NVIDIA_API_KEY_JUDGE` if you have a second key) (Part 2, Option A) |
 | A server | The environment of the account that runs it |
 | GitHub Actions | Repository Settings, Secrets, `NVIDIA_API_KEY` |
+
+The judge model can use its own key. Set `NVIDIA_API_KEY_JUDGE` the same way. If it is not set,
+the judge uses `NVIDIA_API_KEY`. Which model uses which variable is in `model_api_key_env` in
+`config/models.yaml`.
 
 Never put the key in a file you commit, a chat or a screenshot. If a key is exposed, revoke it
 in the NVIDIA console and make a new one. To use another variable name, change `api_key_env` in

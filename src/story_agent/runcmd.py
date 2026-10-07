@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from story_agent.cache import SqliteCache
-from story_agent.config import AppConfig, ConfigError, default_config_dir, get_api_key, load_config
+from story_agent.config import AppConfig, ConfigError, default_config_dir, load_config
 from story_agent.deps import StageDeps
 from story_agent.discovery.packs import load_packs
 from story_agent.evals.app.judge import judge_run
@@ -17,7 +17,7 @@ from story_agent.graph import Runtime
 from story_agent.hooks import build_pipeline, default_registry
 from story_agent.interactive import PromptResponder
 from story_agent.llm import StructuredClient, Transport
-from story_agent.nvidia import NvidiaTransport
+from story_agent.nvidia import transport_from_env
 from story_agent.responders import AnswersFileResponder, load_run_answers
 from story_agent.session import Responder, RunOutcome
 
@@ -47,7 +47,7 @@ def write_private(path: Path, text: str) -> None:
 
 def make_transport(config: AppConfig) -> Transport:
     """Return the real model transport. The key comes from the environment only."""
-    return NvidiaTransport(get_api_key(config.models.api_key_env), config.models)
+    return transport_from_env(config.models)
 
 
 @dataclass

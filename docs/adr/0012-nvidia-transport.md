@@ -36,6 +36,9 @@ do not know which provider is behind it.
 - **Errors.** Timeouts, network errors, 408, 409, 425, 429 and 5xx are transient and retried with
   backoff. 401 and 403 say the key was rejected. 404 names the model. Error details are cut to
   200 characters and never include the request.
+- **A key per model.** `model_api_key_env` maps a model id to its own environment variable (the
+  judge uses `NVIDIA_API_KEY_JUDGE`). The transport picks the key by the model in each request.
+  A model whose variable is unset uses the main key, so a single key still works.
 - **Prices are nominal.** The hosted free tier does not bill per token. The numbers in config
   keep the cost budget and cost metrics meaningful and should be replaced with a real rate on a
   paid host.

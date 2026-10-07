@@ -9,12 +9,14 @@ sent in the ``Authorization`` header.
 from __future__ import annotations
 
 import json
+import os
 import re
+from collections.abc import Mapping
 from typing import Any
 
 import httpx2 as httpx
 
-from story_agent.config import ModelsConfig
+from story_agent.config import ModelsConfig, get_api_key
 from story_agent.llm import LLMError, LLMRequest, RawResponse, TransientError, Usage
 
 TRANSIENT_STATUS = {408, 409, 425, 429}
@@ -63,10 +65,15 @@ class NvidiaTransport:
     """Sends structured requests to an NVIDIA-hosted model."""
 
     def __init__(
-        self, api_key: str, models: ModelsConfig, client: httpx.Client | None = None
+        self,
+        api_key: str,
+        models: ModelsConfig,
+        client: httpx.Client | None = None,
+        model_keys: Mapping[str, str] | None = None,
     ) -> None:
-        """Keep the settings. ``client`` can be replaced in tests."""
+        """Keep the settings. ``model_keys`` maps a model id to its own key."""
         self._key = api_key
+        self._model_keys = dict(model_keys or {})
         self._models = models
         self._client = client or httpx.Client(timeout=models.timeout_s)
         self._url = models.base_url.rstrip("/") + "/chat/completions"
@@ -106,7 +113,10 @@ class NvidiaTransport:
             response = self._client.post(
                 self._url,
                 json=self._body(request, json_schema, mode),
-                headers={"Authorization": f"Bearer {self._key}", "Accept": "application/json"},
+                headers={
+                    "Authorization": f"Bearer {self._model_keys.get(request.model, self._key)}",
+                    "Accept": "application/json",
+                },
             )
         except httpx.TimeoutException as exc:
             raise TransientError("the request timed out") from exc
@@ -117,11 +127,12 @@ class NvidiaTransport:
             raise self._error(response.status_code, payload, request.model)
         return self._parse(payload)
 
-    def list_models(self) -> list[str]:
-        """Return the model ids this key can use."""
+    def list_models(self, model: str | None = None) -> list[str]:
+        """Return the model ids a key can use: the key for ``model``, or the default key."""
+        key = self._model_keys.get(model, self._key) if model else self._key
         url = self._models.base_url.rstrip("/") + "/models"
         try:
-            response = self._client.get(url, headers={"Authorization": f"Bearer {self._key}"})
+            response = self._client.get(url, headers={"Authorization": f"Bearer {key}"})
         except httpx.TransportError as exc:
             raise TransientError(f"network error: {type(exc).__name__}") from exc
         payload = self._payload(response)
@@ -220,3 +231,20 @@ class NvidiaTransport:
         used = payload.get("usage") or {}
         usage = Usage(int(used.get("prompt_tokens", 0)), int(used.get("completion_tokens", 0)))
         return RawResponse(data, usage)
+
+
+def transport_from_env(
+    models: ModelsConfig, env: Mapping[str, str] | None = None
+) -> NvidiaTransport:
+    """Build the transport from config and the environment.
+
+    The main key is required. A model with its own variable in ``model_api_key_env`` uses that
+    key when the variable is set, and the main key otherwise.
+    """
+    source = os.environ if env is None else env
+    own = {
+        model: source[name].strip()
+        for model, name in models.model_api_key_env.items()
+        if source.get(name, "").strip()
+    }
+    return NvidiaTransport(get_api_key(models.api_key_env, source), models, model_keys=own)

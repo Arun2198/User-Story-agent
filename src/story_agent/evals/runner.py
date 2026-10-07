@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from story_agent.config import AppConfig, get_api_key, load_config
+from story_agent.config import AppConfig, load_config
 from story_agent.discovery.packs import load_packs
 from story_agent.evals.app.run import (
     TransportFactory,
@@ -27,7 +27,7 @@ from story_agent.evals.components import (
 from story_agent.evals.components import memory as memory_components
 from story_agent.evals.report import SuiteResult
 from story_agent.llm import LLMClient, StructuredClient
-from story_agent.nvidia import NvidiaTransport
+from story_agent.nvidia import transport_from_env
 from story_agent.schema import EvalReport
 
 COMPONENTS = ("redaction", "injection", "scope_guard", "domain_detection", "memory", "drafting")
@@ -87,7 +87,7 @@ def select_cases(options: SuiteOptions) -> list[EvalCase]:
 
 
 def _live_parts(app: AppConfig) -> tuple[TransportFactory, LLMClient]:
-    transport = NvidiaTransport(get_api_key(app.models.api_key_env), app.models)
+    transport = transport_from_env(app.models)
     return (lambda _case, _index: transport), StructuredClient(transport, app.models)
 
 

@@ -8,7 +8,12 @@ from pydantic import BaseModel
 
 from story_agent.config import AppConfig, ConfigError, ModelsConfig, get_api_key
 from story_agent.llm import LLMError, LLMRequest, StructuredClient, TransientError
-from story_agent.nvidia import NvidiaTransport, clean_json_text, extract_json_object
+from story_agent.nvidia import (
+    NvidiaTransport,
+    clean_json_text,
+    extract_json_object,
+    transport_from_env,
+)
 
 SCHEMA: dict[str, Any] = {"type": "object", "properties": {"a": {"type": "string"}}}
 
@@ -482,3 +487,82 @@ def test_list_models_reports_a_rejected_key(app_config: AppConfig) -> None:
     t = transport(app_config.models, lambda _r: httpx.Response(401, json={"detail": "no"}))
     with pytest.raises(LLMError, match="key was rejected"):
         t.list_models()
+
+
+# ---- a separate key for the judge -----------------------------------------------------------
+
+
+def test_the_shipped_config_gives_the_judge_its_own_key(app_config: AppConfig) -> None:
+    models = app_config.models
+    assert models.judge != models.generator
+    assert models.model_api_key_env == {models.judge: "NVIDIA_API_KEY_JUDGE"}
+    assert set(models.prices) == {models.generator, models.judge}
+
+
+def keyed_transport(
+    models: ModelsConfig, auths: list[str], model_keys: dict[str, str]
+) -> NvidiaTransport:
+    def handler(req: httpx.Request) -> httpx.Response:
+        auths.append(req.headers["authorization"])
+        return httpx.Response(200, json=reply() if req.method == "POST" else {"data": []})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    return NvidiaTransport("main-key", models, client, model_keys)
+
+
+def test_each_model_is_called_with_its_own_key(app_config: AppConfig) -> None:
+    models = app_config.models
+    auths: list[str] = []
+    t = keyed_transport(models, auths, {models.judge: "judge-key"})
+    t.send(LLMRequest("p", "s", "u", models.generator), SCHEMA)
+    t.send(LLMRequest("p", "s", "u", models.judge), SCHEMA)
+    assert auths == ["Bearer main-key", "Bearer judge-key"]
+
+
+def test_listing_uses_the_key_of_the_model_asked_about(app_config: AppConfig) -> None:
+    models = app_config.models
+    auths: list[str] = []
+    t = keyed_transport(models, auths, {models.judge: "judge-key"})
+    t.list_models()
+    t.list_models(models.judge)
+    t.list_models(models.generator)
+    assert auths == ["Bearer main-key", "Bearer judge-key", "Bearer main-key"]
+
+
+def test_keys_come_from_the_named_variables(app_config: AppConfig) -> None:
+    models = app_config.models
+    env = {"NVIDIA_API_KEY": "main-key", "NVIDIA_API_KEY_JUDGE": " judge-key \n"}
+    auths: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        auths.append(req.headers["authorization"])
+        return httpx.Response(200, json=reply())
+
+    t = transport_from_env(models, env)
+    t._client = httpx.Client(transport=httpx.MockTransport(handler))  # a stub client for the test
+    t.send(LLMRequest("p", "s", "u", models.generator), SCHEMA)
+    t.send(LLMRequest("p", "s", "u", models.judge), SCHEMA)
+    assert auths == ["Bearer main-key", "Bearer judge-key"]
+
+
+def test_a_missing_judge_key_falls_back_to_the_main_key(app_config: AppConfig) -> None:
+    models = app_config.models
+    auths: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        auths.append(req.headers["authorization"])
+        return httpx.Response(200, json=reply())
+
+    for env in (
+        {"NVIDIA_API_KEY": "main-key"},
+        {"NVIDIA_API_KEY": "main-key", "NVIDIA_API_KEY_JUDGE": "  "},
+    ):
+        t = transport_from_env(models, env)
+        t._client = httpx.Client(transport=httpx.MockTransport(handler))  # a stub client
+        t.send(LLMRequest("p", "s", "u", models.judge), SCHEMA)
+    assert auths == ["Bearer main-key", "Bearer main-key"]
+
+
+def test_the_main_key_is_still_required(app_config: AppConfig) -> None:
+    with pytest.raises(ConfigError, match="NVIDIA_API_KEY is not set"):
+        transport_from_env(app_config.models, {"NVIDIA_API_KEY_JUDGE": "judge-key"})
