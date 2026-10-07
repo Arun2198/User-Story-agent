@@ -8,7 +8,7 @@ __pycache__/
 .coverage
 htmlcov/
 dist/
-runs/
-memory/
+/runs/
+/memory/
 .env
 *.egg-info/
