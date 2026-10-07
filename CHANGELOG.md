@@ -7,6 +7,11 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
+- Publishers: markdown, JSON and Azure DevOps CSV import files; request plans with field mapping and `--dry-run` for Azure DevOps and Jira REST; `story-agent publish`; `--format` and `--out` on `run`.
+- Approval gate for external writes, bound to the exact payload, and idempotency labels for re-runs.
+- Publish checks: no unreviewed stories, grounding re-checked, no PII or redacted values in output, spreadsheet formula neutralising.
+- `config/destinations.yaml` and `config/templates/`.
+- `skill/scenario-to-stories/SKILL.md` and tests that keep it in step with the config.
 - Run graph (LangGraph, SQLite checkpoints) that pauses for answers, memory conflicts, the readiness gate, story review and memory approval.
 - `story-agent run` and `story-agent resume`, with terminal prompts or an `--answers` file; exit codes for paused, refused and stopped runs.
 - Answers file settings for unanswered questions, conflicts, review and memory.

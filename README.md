@@ -63,6 +63,49 @@ that rely on it. `review: none` leaves stories waiting for you.
 | 3 | paused: waiting for input; run `resume` |
 | 4 | refused by scope, or stopped by a guardrail |
 
+## Publishing
+
+```bash
+story-agent publish run-20261007-101500-3fa2 --target md          # runs/<id>/stories.md
+story-agent publish run-20261007-101500-3fa2 --target json --out stories.json
+story-agent publish run-20261007-101500-3fa2 --target ado_csv --out import.csv
+story-agent run "..." --format csv --out import.csv               # publish when the run ends
+story-agent publish run-20261007-101500-3fa2 --target ado_rest --dry-run
+```
+
+| Target | State |
+|---|---|
+| `md`, `json` | complete |
+| `ado_csv` | complete: Azure DevOps import file, Epic > Feature > Story through the Title 1, 2, 3 columns |
+| `ado_rest`, `jira_rest` | request plan and field mapping with `--dry-run`; **writing is not enabled in this build** (no HTTP client ships) |
+
+Only approved and edited stories are published. A run with stories still waiting for review,
+or with an approved story that fails the grounding check, is refused. Output that repeats a
+value that was redacted from your input, or that holds sensitive values, is refused.
+
+Settings are in `config/destinations.yaml`: label names, MoSCoW to priority maps, the story
+points field, the ADO process (`agile`, `scrum` or `cmmi`) and the Jira field names. Description
+layouts are in `config/templates/` (HTML for Azure DevOps, wiki markup for Jira, markdown).
+Tokens are never stored there; they come from the environment variables it names.
+
+- Every story and epic carries a label `sa-<12 hex>` made from the workspace, the scenario and
+  the story's identity. An external publish looks the item up by that label and updates it,
+  so running it twice does not duplicate. A CSV import cannot update, so re-importing a CSV
+  creates new items.
+- ADO needs a feature between epic and story, so stories with no feature go under
+  `ado.default_feature` (`General`). Jira has no feature level, so the feature becomes a label.
+- Cells that would run as a spreadsheet formula (starting with `=`, `+`, `-`, `@`) are prefixed
+  with `'` in the CSV.
+- **Approval before any external write.** A write needs a person to see the exact payload and
+  confirm at a terminal. The approval is for that payload only (it carries its hash), and there
+  is no flag that skips it. Without a terminal, use `--dry-run`.
+
+## Skill
+
+`skill/scenario-to-stories/SKILL.md` is the same workflow for use without code. It points at
+the same `prompts/`, `config/domains/` and `config/standards.yaml`, and tests check that its
+limits and refusal message still match the config.
+
 ## Configuration
 
 All settings are in `config/`. Model names are in `config/models.yaml` only.
@@ -106,6 +149,18 @@ A pack is one YAML file in `config/domains/`. No code changes.
 Implement `story_agent.intake.ingestor.Ingestor` (`ingest(source, notes=..., workspace=...)`
 returning a `Scenario`). Only plain text (`TextIngestor`) is built. Ingested text goes
 through the same redaction and injection hooks as typed text.
+
+## Adding a publisher
+
+A file publisher is a class with `name`, `extension` and `render(view, ctx) -> str`
+(see `publish/markdown.py`). It reads the `PublishView` from `publish/view.py`, which already
+holds the approved stories, labels, provenance lines and idempotency keys. Register it in
+`FILE_TARGETS` in `publish/service.py`, add a snapshot test with `check_snapshot` and run
+`UPDATE_SNAPSHOTS=1 pytest tests/unit/publish` once to create the snapshot, then read it.
+
+An external system implements `plan(view, ctx) -> Plan` plus a few small methods that read its
+responses (see `publish/adorest.py`). It never sends anything: `apply_plan` does, and only with
+an `Approval` for that exact plan.
 
 ## Memory
 

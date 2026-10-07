@@ -35,6 +35,10 @@ phase shown), **manual** (a review step).
 | Packs are data; pack validation | `discovery/packs.py`, `tests/unit/discovery/test_packs.py` | enforced |
 | Clarification gate (6 per round, 3 rounds, explicit go-ahead) | `clarify/`, `tests/unit/clarify/` | enforced |
 | Non-interactive runs only with `--answers`; the go-ahead is set only at the graph's gate | `runcmd.choose_responder`, `graph.RunGraph.gate`, `tests/unit/test_run_cli.py`, `tests/unit/test_graph.py` | enforced |
+| Publishers: payload snapshot tests per destination | `tests/unit/publish/`, `tests/unit/publish/snapshots/` | enforced |
+| Human approval before any external write, bound to the exact payload | `publish/base.py` (`Approval`, `apply_plan`), `tests/unit/publish/test_publishers.py` | enforced |
+| Published output is grounded and free of PII | `publish/safety.py`, `tests/unit/publish/` | enforced |
+| Skill matches the agent's limits and files | `skill/scenario-to-stories/SKILL.md`, `tests/unit/test_skill.py` | enforced |
 | Runs can pause and resume from a private checkpoint | `session.py`, `runs/<id>/checkpoint.sqlite` (0600), `tests/unit/test_graph.py` | enforced |
 | Every story grounded and traceable | `guardrails/grounding.py`, `pipeline/requirements.py`, `pipeline/numbers.py`, `GroundingHook`, `tests/unit/pipeline/` | enforced |
 | Deterministic ids, ordering and ID stability | `pipeline/postprocess.py`, `IdStabilityHook`, Hypothesis tests | enforced |
