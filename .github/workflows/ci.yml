@@ -14,6 +14,8 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest --cov --cov-report=xml
+      - name: Coverage gate for guardrails and hooks
+        run: uv run coverage report --include="src/story_agent/guardrails/*,src/story_agent/hooks/*" --fail-under=95
 
   security:
     runs-on: ubuntu-latest

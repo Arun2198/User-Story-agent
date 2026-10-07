@@ -5,8 +5,8 @@ criteria. It discovers what is missing, asks clarification questions, remembers
 confirmed answers per workspace, and works for any industry through YAML domain
 packs. Banking is the first pack.
 
-Status: phase 0 (scaffold, schemas, config, LLM wrapper, cache, fake client). The
-pipeline stages arrive in later phases; see `STANDARDS.md` for what is enforced.
+Status: phase 1 (hooks, guardrails and their component evals). The remaining
+stages arrive in later phases; see `STANDARDS.md` for what is enforced.
 
 ## Setup
 
