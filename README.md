@@ -8,6 +8,8 @@ packs. Banking is the first pack.
 Status: phase 4 (draft, criteria, critique, review). The remaining
 stages arrive in later phases; see `STANDARDS.md` for what is enforced.
 
+New here? Read [docs/getting-started.md](docs/getting-started.md) first.
+
 ## Setup
 
 ```bash
