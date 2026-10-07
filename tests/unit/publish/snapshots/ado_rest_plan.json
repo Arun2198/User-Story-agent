@@ -1,0 +1,499 @@
+{
+  "target": "ado_rest",
+  "operations": [
+    {
+      "kind": "epic",
+      "key": "b7dba0657014",
+      "parent_key": null,
+      "title": "Disputes",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-b7dba0657014'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$Epic?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Disputes"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-b7dba0657014"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Disputes"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-b7dba0657014"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    },
+    {
+      "kind": "feature",
+      "key": "c22610245be0",
+      "parent_key": "b7dba0657014",
+      "title": "Raise a dispute",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-c22610245be0'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$Feature?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Raise a dispute"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-c22610245be0"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Raise a dispute"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-c22610245be0"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    },
+    {
+      "kind": "story",
+      "key": "e6f8dd98eaba",
+      "parent_key": "c22610245be0",
+      "title": "Raise a card dispute",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-e6f8dd98eaba'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$User%20Story?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Raise a card dispute"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Description",
+            "value": "<p>As a Customer, I want to dispute a card payment within 60 days, so that I get a temporary credit while the bank investigates.</p>\n<h4>Source</h4>\n<ul><li>Scenario: &quot;expects a temporary credit while the bank investigates&quot;</li><li>Question: How long does the customer have to raise a dispute? Answer: 60 days</li></ul>\n<p>Requirements: REQ-001, REQ-002</p>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.Priority",
+            "value": 1
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; REQ-001; REQ-002; sa-e6f8dd98eaba"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.AcceptanceCriteria",
+            "value": "<ol><li>Given a card payment made 10 days ago, when the customer raises a dispute, then a temporary credit is posted</li><li>Given a card payment made 90 days ago, when the customer raises a dispute, then the dispute is refused with the reason</li></ol>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+            "value": 5
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Raise a card dispute"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Description",
+            "value": "<p>As a Customer, I want to dispute a card payment within 60 days, so that I get a temporary credit while the bank investigates.</p>\n<h4>Source</h4>\n<ul><li>Scenario: &quot;expects a temporary credit while the bank investigates&quot;</li><li>Question: How long does the customer have to raise a dispute? Answer: 60 days</li></ul>\n<p>Requirements: REQ-001, REQ-002</p>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.Priority",
+            "value": 1
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; REQ-001; REQ-002; sa-e6f8dd98eaba"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.AcceptanceCriteria",
+            "value": "<ol><li>Given a card payment made 10 days ago, when the customer raises a dispute, then a temporary credit is posted</li><li>Given a card payment made 90 days ago, when the customer raises a dispute, then the dispute is refused with the reason</li></ol>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+            "value": 5
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    },
+    {
+      "kind": "feature",
+      "key": "2755f32802e5",
+      "parent_key": "b7dba0657014",
+      "title": "General",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-2755f32802e5'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$Feature?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "General"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-2755f32802e5"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "General"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-2755f32802e5"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    },
+    {
+      "kind": "story",
+      "key": "6b0ed9d83b53",
+      "parent_key": "2755f32802e5",
+      "title": "Keep an audit trail of disputes",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-6b0ed9d83b53'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$User%20Story?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Keep an audit trail of disputes"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Description",
+            "value": "<p>As a Compliance officer, I want every dispute action recorded, so that I can answer an audit.</p>\n<h4>Source</h4>\n<ul><li>Confirmed from saved memory (M-abc1234567): No daily claim limit</li><li>Decision on audit: Agent judgment, approved by the user</li></ul>\n<p>Requirements: REQ-003</p>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.Priority",
+            "value": 2
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; REQ-003; needs-clarification; sa-6b0ed9d83b53"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.AcceptanceCriteria",
+            "value": "<ol><li>Given a dispute is raised, when its status changes, then the change is recorded with who and when</li></ol>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+            "value": 3
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Keep an audit trail of disputes"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Description",
+            "value": "<p>As a Compliance officer, I want every dispute action recorded, so that I can answer an audit.</p>\n<h4>Source</h4>\n<ul><li>Confirmed from saved memory (M-abc1234567): No daily claim limit</li><li>Decision on audit: Agent judgment, approved by the user</li></ul>\n<p>Requirements: REQ-003</p>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.Priority",
+            "value": 2
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; REQ-003; needs-clarification; sa-6b0ed9d83b53"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.AcceptanceCriteria",
+            "value": "<ol><li>Given a dispute is raised, when its status changes, then the change is recorded with who and when</li></ol>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Scheduling.StoryPoints",
+            "value": 3
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    },
+    {
+      "kind": "epic",
+      "key": "eb24ea41732d",
+      "parent_key": null,
+      "title": "Visibility",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-eb24ea41732d'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$Epic?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Visibility"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-eb24ea41732d"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Visibility"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-eb24ea41732d"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    },
+    {
+      "kind": "feature",
+      "key": "b2bd0f754dd2",
+      "parent_key": "eb24ea41732d",
+      "title": "General",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-b2bd0f754dd2'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$Feature?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "General"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-b2bd0f754dd2"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "General"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; sa-b2bd0f754dd2"
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    },
+    {
+      "kind": "story",
+      "key": "c728cf721204",
+      "parent_key": "b2bd0f754dd2",
+      "title": "Let the relationship manager see a case",
+      "lookup": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/wiql?api-version=7.1",
+        "body": {
+          "query": "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.Tags] CONTAINS 'sa-c728cf721204'"
+        },
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/Bank/_apis/wit/workitems/$User%20Story?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Let the relationship manager see a case"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Description",
+            "value": "<p>As a Relationship manager, I want to see the dispute case, so that I can support the customer.</p>\n<h4>Source</h4>\n<ul><li>Scenario: &quot;The relationship manager can see the case&quot;</li><li>Reviewer note: Keep it short</li></ul>\n<p>Requirements: REQ-001</p>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.Priority",
+            "value": 3
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; REQ-001; sa-c728cf721204"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.AcceptanceCriteria",
+            "value": ""
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      },
+      "update": {
+        "method": "PATCH",
+        "path": "/Bank/_apis/wit/workitems/{id}?api-version=7.1",
+        "body": [
+          {
+            "op": "add",
+            "path": "/fields/System.Title",
+            "value": "Let the relationship manager see a case"
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Description",
+            "value": "<p>As a Relationship manager, I want to see the dispute case, so that I can support the customer.</p>\n<h4>Source</h4>\n<ul><li>Scenario: &quot;The relationship manager can see the case&quot;</li><li>Reviewer note: Keep it short</li></ul>\n<p>Requirements: REQ-001</p>"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.Priority",
+            "value": 3
+          },
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "scenario-import; REQ-001; sa-c728cf721204"
+          },
+          {
+            "op": "add",
+            "path": "/fields/Microsoft.VSTS.Common.AcceptanceCriteria",
+            "value": ""
+          }
+        ],
+        "content_type": "application/json-patch+json"
+      }
+    }
+  ]
+}

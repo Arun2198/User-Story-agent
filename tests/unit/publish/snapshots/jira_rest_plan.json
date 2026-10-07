@@ -1,0 +1,275 @@
+{
+  "target": "jira_rest",
+  "operations": [
+    {
+      "kind": "epic",
+      "key": "b7dba0657014",
+      "parent_key": null,
+      "title": "Disputes",
+      "lookup": {
+        "method": "GET",
+        "path": "/rest/api/2/search?jql=project%20%3D%20%22BANK%22%20AND%20labels%20%3D%20%22sa-b7dba0657014%22&fields=key&maxResults=1",
+        "body": null,
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/rest/api/2/issue",
+        "body": {
+          "fields": {
+            "project": {
+              "key": "BANK"
+            },
+            "issuetype": {
+              "name": "Epic"
+            },
+            "summary": "Disputes",
+            "labels": [
+              "scenario-import",
+              "sa-b7dba0657014"
+            ]
+          }
+        },
+        "content_type": "application/json"
+      },
+      "update": {
+        "method": "PUT",
+        "path": "/rest/api/2/issue/{id}",
+        "body": {
+          "fields": {
+            "summary": "Disputes",
+            "labels": [
+              "scenario-import",
+              "sa-b7dba0657014"
+            ]
+          }
+        },
+        "content_type": "application/json"
+      }
+    },
+    {
+      "kind": "story",
+      "key": "e6f8dd98eaba",
+      "parent_key": "b7dba0657014",
+      "title": "Raise a card dispute",
+      "lookup": {
+        "method": "GET",
+        "path": "/rest/api/2/search?jql=project%20%3D%20%22BANK%22%20AND%20labels%20%3D%20%22sa-e6f8dd98eaba%22&fields=key&maxResults=1",
+        "body": null,
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/rest/api/2/issue",
+        "body": {
+          "fields": {
+            "project": {
+              "key": "BANK"
+            },
+            "issuetype": {
+              "name": "Story"
+            },
+            "summary": "Raise a card dispute",
+            "description": "As a Customer, I want to dispute a card payment within 60 days, so that I get a temporary credit while the bank investigates.\n\nh4. Acceptance criteria\n# Given a card payment made 10 days ago, when the customer raises a dispute, then a temporary credit is posted\n# Given a card payment made 90 days ago, when the customer raises a dispute, then the dispute is refused with the reason\n\nh4. Source\n* Scenario: \"expects a temporary credit while the bank investigates\"\n* Question: How long does the customer have to raise a dispute? Answer: 60 days\n\nRequirements: REQ-001, REQ-002",
+            "labels": [
+              "scenario-import",
+              "REQ-001",
+              "REQ-002",
+              "sa-e6f8dd98eaba",
+              "feature-raise-a-dispute"
+            ],
+            "priority": {
+              "name": "Highest"
+            },
+            "customfield_10016": 5
+          }
+        },
+        "content_type": "application/json"
+      },
+      "update": {
+        "method": "PUT",
+        "path": "/rest/api/2/issue/{id}",
+        "body": {
+          "fields": {
+            "summary": "Raise a card dispute",
+            "description": "As a Customer, I want to dispute a card payment within 60 days, so that I get a temporary credit while the bank investigates.\n\nh4. Acceptance criteria\n# Given a card payment made 10 days ago, when the customer raises a dispute, then a temporary credit is posted\n# Given a card payment made 90 days ago, when the customer raises a dispute, then the dispute is refused with the reason\n\nh4. Source\n* Scenario: \"expects a temporary credit while the bank investigates\"\n* Question: How long does the customer have to raise a dispute? Answer: 60 days\n\nRequirements: REQ-001, REQ-002",
+            "labels": [
+              "scenario-import",
+              "REQ-001",
+              "REQ-002",
+              "sa-e6f8dd98eaba",
+              "feature-raise-a-dispute"
+            ],
+            "priority": {
+              "name": "Highest"
+            },
+            "customfield_10016": 5
+          }
+        },
+        "content_type": "application/json"
+      }
+    },
+    {
+      "kind": "story",
+      "key": "6b0ed9d83b53",
+      "parent_key": "b7dba0657014",
+      "title": "Keep an audit trail of disputes",
+      "lookup": {
+        "method": "GET",
+        "path": "/rest/api/2/search?jql=project%20%3D%20%22BANK%22%20AND%20labels%20%3D%20%22sa-6b0ed9d83b53%22&fields=key&maxResults=1",
+        "body": null,
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/rest/api/2/issue",
+        "body": {
+          "fields": {
+            "project": {
+              "key": "BANK"
+            },
+            "issuetype": {
+              "name": "Story"
+            },
+            "summary": "Keep an audit trail of disputes",
+            "description": "As a Compliance officer, I want every dispute action recorded, so that I can answer an audit.\n\nh4. Acceptance criteria\n# Given a dispute is raised, when its status changes, then the change is recorded with who and when\n\nh4. Source\n* Confirmed from saved memory (M-abc1234567): No daily claim limit\n* Decision on audit: Agent judgment, approved by the user\n\nRequirements: REQ-003",
+            "labels": [
+              "scenario-import",
+              "REQ-003",
+              "needs-clarification",
+              "sa-6b0ed9d83b53"
+            ],
+            "priority": {
+              "name": "High"
+            },
+            "customfield_10016": 3
+          }
+        },
+        "content_type": "application/json"
+      },
+      "update": {
+        "method": "PUT",
+        "path": "/rest/api/2/issue/{id}",
+        "body": {
+          "fields": {
+            "summary": "Keep an audit trail of disputes",
+            "description": "As a Compliance officer, I want every dispute action recorded, so that I can answer an audit.\n\nh4. Acceptance criteria\n# Given a dispute is raised, when its status changes, then the change is recorded with who and when\n\nh4. Source\n* Confirmed from saved memory (M-abc1234567): No daily claim limit\n* Decision on audit: Agent judgment, approved by the user\n\nRequirements: REQ-003",
+            "labels": [
+              "scenario-import",
+              "REQ-003",
+              "needs-clarification",
+              "sa-6b0ed9d83b53"
+            ],
+            "priority": {
+              "name": "High"
+            },
+            "customfield_10016": 3
+          }
+        },
+        "content_type": "application/json"
+      }
+    },
+    {
+      "kind": "epic",
+      "key": "eb24ea41732d",
+      "parent_key": null,
+      "title": "Visibility",
+      "lookup": {
+        "method": "GET",
+        "path": "/rest/api/2/search?jql=project%20%3D%20%22BANK%22%20AND%20labels%20%3D%20%22sa-eb24ea41732d%22&fields=key&maxResults=1",
+        "body": null,
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/rest/api/2/issue",
+        "body": {
+          "fields": {
+            "project": {
+              "key": "BANK"
+            },
+            "issuetype": {
+              "name": "Epic"
+            },
+            "summary": "Visibility",
+            "labels": [
+              "scenario-import",
+              "sa-eb24ea41732d"
+            ]
+          }
+        },
+        "content_type": "application/json"
+      },
+      "update": {
+        "method": "PUT",
+        "path": "/rest/api/2/issue/{id}",
+        "body": {
+          "fields": {
+            "summary": "Visibility",
+            "labels": [
+              "scenario-import",
+              "sa-eb24ea41732d"
+            ]
+          }
+        },
+        "content_type": "application/json"
+      }
+    },
+    {
+      "kind": "story",
+      "key": "c728cf721204",
+      "parent_key": "eb24ea41732d",
+      "title": "Let the relationship manager see a case",
+      "lookup": {
+        "method": "GET",
+        "path": "/rest/api/2/search?jql=project%20%3D%20%22BANK%22%20AND%20labels%20%3D%20%22sa-c728cf721204%22&fields=key&maxResults=1",
+        "body": null,
+        "content_type": "application/json"
+      },
+      "create": {
+        "method": "POST",
+        "path": "/rest/api/2/issue",
+        "body": {
+          "fields": {
+            "project": {
+              "key": "BANK"
+            },
+            "issuetype": {
+              "name": "Story"
+            },
+            "summary": "Let the relationship manager see a case",
+            "description": "As a Relationship manager, I want to see the dispute case, so that I can support the customer.\n\n\nh4. Source\n* Scenario: \"The relationship manager can see the case\"\n* Reviewer note: Keep it short\n\nRequirements: REQ-001",
+            "labels": [
+              "scenario-import",
+              "REQ-001",
+              "sa-c728cf721204"
+            ],
+            "priority": {
+              "name": "Medium"
+            }
+          }
+        },
+        "content_type": "application/json"
+      },
+      "update": {
+        "method": "PUT",
+        "path": "/rest/api/2/issue/{id}",
+        "body": {
+          "fields": {
+            "summary": "Let the relationship manager see a case",
+            "description": "As a Relationship manager, I want to see the dispute case, so that I can support the customer.\n\n\nh4. Source\n* Scenario: \"The relationship manager can see the case\"\n* Reviewer note: Keep it short\n\nRequirements: REQ-001",
+            "labels": [
+              "scenario-import",
+              "REQ-001",
+              "sa-c728cf721204"
+            ],
+            "priority": {
+              "name": "Medium"
+            }
+          }
+        },
+        "content_type": "application/json"
+      }
+    }
+  ]
+}

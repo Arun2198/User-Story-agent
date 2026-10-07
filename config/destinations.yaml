@@ -1,2 +1,56 @@
-# Filled in with publisher work in a later phase.
-destinations: {}
+# Where finished stories can go. Secrets are never stored here: tokens come from
+# the environment variables named under token_env.
+labels:
+  import: scenario-import
+  needs_clarification: needs-clarification
+  key_prefix: sa-
+
+templates:
+  markdown: story.md
+  ado: description.html
+  jira: description.jira
+
+ado:
+  process: agile            # agile | scrum | cmmi
+  organization_url: ""      # for example https://dev.azure.com/acme
+  project: ""
+  token_env: AZURE_DEVOPS_PAT
+  acceptance_criteria: field   # field | description
+  default_feature: General     # ADO needs Epic > Feature > Story, so stories with no feature go here
+  priority: { must: 1, should: 2, could: 3, wont: 4 }
+  processes:
+    agile:
+      epic: Epic
+      feature: Feature
+      story: User Story
+      points_field: Microsoft.VSTS.Scheduling.StoryPoints
+      points_column: Story Points
+      criteria_field: Microsoft.VSTS.Common.AcceptanceCriteria
+      criteria_column: Acceptance Criteria
+    scrum:
+      epic: Epic
+      feature: Feature
+      story: Product Backlog Item
+      points_field: Microsoft.VSTS.Scheduling.Effort
+      points_column: Effort
+      criteria_field: Microsoft.VSTS.Common.AcceptanceCriteria
+      criteria_column: Acceptance Criteria
+    cmmi:
+      epic: Epic
+      feature: Feature
+      story: Requirement
+      points_field: Microsoft.VSTS.Scheduling.Size
+      points_column: Size
+      criteria_field: Microsoft.VSTS.Common.AcceptanceCriteria
+      criteria_column: Acceptance Criteria
+
+jira:
+  base_url: ""              # for example https://acme.atlassian.net
+  project_key: ""
+  email_env: JIRA_EMAIL
+  token_env: JIRA_API_TOKEN
+  issue_types: { epic: Epic, story: Story }
+  priority: { must: Highest, should: High, could: Medium, wont: Low }
+  story_points_field: customfield_10016
+  epic_link_field: parent   # "parent" for team-managed projects; a customfield id for older ones
+  acceptance_criteria_field: null   # null appends the criteria to the description
