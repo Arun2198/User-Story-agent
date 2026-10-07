@@ -79,17 +79,23 @@ def _q(**kw: object) -> Question:
     ],
 )
 def test_parse_answer_kinds(text: str, kind: AnswerKind) -> None:
-    assert parse_answer(_q(), CleanText(text)).kind is kind
+    answer = parse_answer(_q(), CleanText(text))
+    assert answer is not None
+    assert answer.kind is kind
 
 
 def test_option_answers_use_the_option_text() -> None:
-    assert parse_answer(_q(), CleanText("2")).value == "Beta"
-    assert parse_answer(_q(), CleanText("gamma")).value == "Gamma"
+    two = parse_answer(_q(), CleanText("2"))
+    gamma = parse_answer(_q(), CleanText("gamma"))
+    assert two is not None
+    assert gamma is not None
+    assert (two.value, gamma.value) == ("Beta", "Gamma")
 
 
-def test_memory_default_needs_a_fresh_yes() -> None:
+def test_yes_confirms_the_remembered_default_even_when_stale() -> None:
     ref = MemoryRef(memory_id="M1", value="10 days", last_confirmed_at=utcnow())
     fresh = parse_answer(_q(remembered_default=ref), CleanText("yes"))
+    assert fresh is not None
     assert (fresh.kind, fresh.memory_id, fresh.value) == (
         AnswerKind.MEMORY_CONFIRMED,
         "M1",
@@ -98,7 +104,31 @@ def test_memory_default_needs_a_fresh_yes() -> None:
     stale = parse_answer(
         _q(remembered_default=ref.model_copy(update={"stale": True})), CleanText("yes")
     )
-    assert stale.kind is AnswerKind.OTHER
+    assert stale is not None
+    assert stale.kind is AnswerKind.MEMORY_CONFIRMED
+
+
+def test_no_to_a_remembered_default_leaves_the_question_open() -> None:
+    ref = MemoryRef(memory_id="M1", value="10 days", last_confirmed_at=utcnow())
+    assert parse_answer(_q(remembered_default=ref), CleanText("no")) is None
+    plain = parse_answer(_q(), CleanText("no"))
+    assert plain is not None
+    assert plain.kind is AnswerKind.OTHER
+
+
+def test_rejecting_a_default_is_reported_and_recorded(
+    app_config: AppConfig, packs: PackSet, prompts_dir: Path
+) -> None:
+    _, _, state, _ = _asked(app_config, packs, prompts_dir)
+    question = state.rounds[0].questions[0]
+    ref = MemoryRef(memory_id="M-7", value="x", last_confirmed_at=utcnow())
+    state.rounds[0].questions[0] = question.model_copy(update={"remembered_default": ref})
+    findings = answer_questions(state, {question.id: CleanText("no")})
+    assert [f.code for f in findings] == ["ANSWER_DEFAULT_REJECTED"]
+    assert state.memory_rejected == ["M-7"]
+    assert state.answers == []
+    answer_questions(state, {question.id: CleanText("no")})
+    assert state.memory_rejected == ["M-7"]
 
 
 def test_answering_confirms_items_with_provenance(

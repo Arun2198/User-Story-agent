@@ -49,6 +49,7 @@ _JUDGMENT = {
 _DEFER = {"defer", "deferred", "later", "decide later", "skip", "not now"}
 _NOT_APPLICABLE = {"n/a", "na", "not applicable", "out of scope", "not needed", "not required"}
 _YES = {"yes", "y", "still valid", "keep", "same"}
+_NO = {"no", "n", "nope", "not valid"}
 _MARKER = re.compile(r"\[QUARANTINED #\d+\]")
 FINAL_PREFIX = "Q-final-"
 
@@ -75,15 +76,23 @@ _SPECIAL: tuple[tuple[set[str], AnswerKind, str], ...] = (
 )
 
 
-def parse_answer(question: Question, text: CleanText) -> Answer:
-    """Turn cleaned answer text into an Answer for ``question``."""
+def parse_answer(question: Question, text: CleanText) -> Answer | None:
+    """Turn cleaned answer text into an Answer for ``question``.
+
+    Returns None when the user says "no" to a remembered default: the question is
+    still open and needs a real answer. A "yes" confirms the remembered value, also
+    when it is stale; the prompt shows the stale label, so that is an explicit
+    re-confirmation.
+    """
     key = _norm(text)
     qid = question.id
     for phrases, kind, wording in _SPECIAL:
         if key in phrases:
             return Answer(question_id=qid, kind=kind, value=wording)
     default = question.remembered_default
-    if default is not None and not default.stale and key in _YES:
+    if default is not None and key in _NO:
+        return None
+    if default is not None and key in _YES:
         return Answer(
             question_id=qid,
             kind=AnswerKind.MEMORY_CONFIRMED,
@@ -151,6 +160,16 @@ def answer_questions(state: RunState, raw: Mapping[str, CleanText]) -> list[Find
             findings.append(_finding("ANSWER_EMPTY", "answer is empty or was quarantined", qid))
             continue
         answer = parse_answer(question, text)
+        if answer is None:
+            default = question.remembered_default
+            if default is not None and default.memory_id not in state.memory_rejected:
+                state.memory_rejected.append(default.memory_id)
+            findings.append(
+                _finding(
+                    "ANSWER_DEFAULT_REJECTED", "remembered answer rejected; please answer", qid
+                )
+            )
+            continue
         state.answers = [a for a in state.answers if a.question_id != qid] + [answer]
         _resolve_items(state, question.item_ids, answer)
     return findings
