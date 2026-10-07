@@ -1,0 +1,107 @@
+# Generic pack. Every other pack extends it.
+schema_version: "1.0"
+id: generic
+name: Generic
+actors:
+  - { id: end_user, name: End user, description: "Person who uses the product or service" }
+  - { id: admin, name: Administrator, description: "Person who configures and supports the system" }
+  - { id: approver, name: Approver, description: "Person who reviews or approves requests" }
+  - { id: external_system, name: External system, description: "Another system that exchanges data" }
+categories:
+  - id: actors_permissions
+    name: Actors and permissions
+    must_have: true
+    weight: 5
+    probes:
+      - Who starts the flow, who else takes part, and who only observes?
+      - Which actions does each actor have permission to do?
+    typical_options:
+      - Single actor with full access
+      - Requester plus an approver
+      - Multiple roles with separate permissions
+  - id: primary_flow
+    name: Primary flow
+    must_have: true
+    weight: 5
+    probes:
+      - What is the normal end-to-end sequence from trigger to outcome?
+      - What is the successful outcome and who sees it?
+    typical_options:
+      - Fully automatic with no manual step
+      - Automatic with a manual review step
+      - Manual process supported by the system
+  - id: alternate_failure_flows
+    name: Alternate and failure flows
+    must_have: true
+    weight: 5
+    probes:
+      - What happens when a step fails, times out or is rejected?
+      - Can the user cancel, retry or resume, and how?
+    typical_options:
+      - Retry automatically, then notify the user
+      - Fail immediately and let the user retry
+      - Route to a manual queue
+  - id: business_rules_limits
+    name: Business rules and limits
+    must_have: true
+    weight: 5
+    probes:
+      - Which rules, thresholds, eligibility checks or time limits apply?
+      - Which values are fixed and which are configurable?
+    typical_options:
+      - Fixed values defined in this scenario
+      - Configurable by an administrator
+      - Defined by an external policy
+  - id: data_records
+    name: Data and records
+    weight: 3
+    probes:
+      - Which data is captured, stored, changed or deleted?
+      - How long are records kept, and who can see them?
+  - id: integrations
+    name: Integrations
+    weight: 3
+    probes:
+      - Which other systems, vendors or channels does this touch?
+      - What happens when an integration is unavailable?
+  - id: notifications
+    name: Notifications
+    weight: 3
+    probes:
+      - Who must be told about which event, through which channel and how fast?
+  - id: reporting
+    name: Reporting
+    weight: 2
+    probes:
+      - Which reports, dashboards or exports are needed, and for whom?
+  - id: security
+    name: Security
+    weight: 4
+    probes:
+      - How are users authenticated and authorised for this flow?
+      - Is any data sensitive, and how must it be protected?
+  - id: performance_availability
+    name: Performance and availability
+    weight: 2
+    probes:
+      - What response times, volumes and uptime does this need?
+  - id: audit
+    name: Audit
+    weight: 3
+    probes:
+      - Which actions must be logged, who may read the log, and for how long?
+  - id: edge_cases
+    name: Edge cases
+    weight: 3
+    probes:
+      - What unusual inputs, duplicates, concurrent actions or boundary values must be handled?
+  - id: out_of_scope
+    name: Out of scope
+    must_have: true
+    weight: 4
+    probes:
+      - What is explicitly not part of this work?
+    typical_options:
+      - Nothing is excluded
+      - Reporting and analytics are excluded
+      - Integrations with other systems are excluded

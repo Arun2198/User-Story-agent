@@ -1,0 +1,393 @@
+# Banking pack. Extends generic. Region-specific rails live in sub_packs.
+schema_version: "1.0"
+id: banking
+name: Banking
+extends: generic
+min_score: 2
+hints:
+  - { term: bank, weight: 2 }
+  - { term: banking, weight: 2 }
+  - { term: savings account, weight: 2 }
+  - { term: current account, weight: 2 }
+  - { term: fixed deposit, weight: 2 }
+  - { term: overdraft, weight: 2 }
+  - { term: beneficiary, weight: 2 }
+  - { term: kyc, weight: 2 }
+  - { term: chargeback, weight: 2 }
+  - { term: mortgage, weight: 2 }
+  - { term: standing instruction, weight: 2 }
+  - { term: provisional credit, weight: 2 }
+  - { term: relationship manager, weight: 2 }
+  - { term: maker-checker, weight: 2 }
+  - { term: ifsc, weight: 2 }
+  - { term: iban, weight: 2 }
+  - { term: swift, weight: 2 }
+  - { term: sepa, weight: 2 }
+  - { term: upi, weight: 2 }
+  - { term: neft, weight: 2 }
+  - { term: rtgs, weight: 2 }
+  - { term: imps, weight: 2 }
+  - { term: loan, weight: 1 }
+  - { term: fraud, weight: 1 }
+  - { term: transaction, weight: 1 }
+  - { term: corporate, weight: 1 }
+  - { term: deposit, weight: 1 }
+  - { term: debit, weight: 1 }
+  - { term: credit, weight: 1 }
+  - { term: card, weight: 1 }
+  - { term: transfer, weight: 1 }
+  - { term: statement, weight: 1 }
+  - { term: interest, weight: 1 }
+  - { term: ach, weight: 1 }
+  - { term: emi, weight: 1 }
+  - { term: account, weight: 1 }
+  - { term: payment, weight: 1 }
+subdomains:
+  - id: payments_transfers
+    name: Payments and transfers
+    hints: [transfer, payment, beneficiary, payee, remittance, wire, standing instruction, bill, direct debit, refund, cooling-off, neft, rtgs, imps, upi, sepa, ach]
+  - id: cards
+    name: Cards
+    hints: [card, chargeback, dispute, merchant, acquirer, provisional credit, atm, pos, debit card, credit card]
+  - id: accounts_deposits
+    name: Accounts and deposits
+    hints: [savings account, current account, fixed deposit, term deposit, overdraft, statement, balance, interest, maturity, premature withdrawal, passbook]
+  - id: lending
+    name: Lending
+    hints: [loan, mortgage, credit decision, underwriting, emi, income verification, credit score, collateral, repayment, disbursement]
+  - id: onboarding_kyc
+    name: Onboarding and KYC
+    hints: [kyc, onboarding, identity verification, cdd, new customer, open account, video kyc, e-kyc, selfie, proof of address, tiered]
+  - id: fraud_alerts
+    name: Fraud and alerts
+    hints: [fraud, suspicious, alert, block, risk score, account takeover, phishing, scam]
+  - id: customer_service
+    name: Customer service
+    hints: [complaint, grievance, sla, resolution, ticket, escalation, statement request, service request, call centre]
+  - id: corporate_banking
+    name: Corporate banking
+    hints: [corporate, treasury, relationship manager, maker-checker, high-value, bulk payment, cash management, trade finance]
+sub_packs:
+  - id: india_rails
+    name: India payment rails and rules
+    min_score: 2
+    hints:
+      - { term: upi, weight: 2 }
+      - { term: neft, weight: 2 }
+      - { term: rtgs, weight: 2 }
+      - { term: imps, weight: 2 }
+      - { term: ifsc, weight: 2 }
+      - { term: aadhaar, weight: 2 }
+      - { term: rbi, weight: 2 }
+      - { term: vpa, weight: 2 }
+      - { term: rupee, weight: 1 }
+      - { term: inr, weight: 1 }
+      - { term: india, weight: 1 }
+      - { term: pan, weight: 1 }
+    categories:
+      - id: upi_rules
+        name: UPI rules
+        weight: 4
+        applies_to: [payments_transfers, fraud_alerts]
+        must_have_in: [payments_transfers]
+        probes:
+          - Which UPI flows apply (pay, collect, mandate) and which handle types (VPA, mobile number)?
+          - Which per-transaction and daily UPI limits and PIN rules apply?
+          - What are the timeout and deemed-success or failure rules, and how is a debit without credit resolved?
+        typical_options:
+          - Standard UPI pay flow only
+          - Pay and collect flows
+          - Pay, collect and recurring mandates
+      - id: neft_rtgs_imps_rules
+        name: NEFT, RTGS and IMPS rules
+        weight: 4
+        applies_to: [payments_transfers, corporate_banking]
+        must_have_in: [payments_transfers, corporate_banking]
+        probes:
+          - Which of NEFT, RTGS and IMPS are used, and how does the system choose between them?
+          - What are the minimum amounts, limits, operating windows and settlement timing for each?
+          - How are returns and failed credits handled for each rail?
+        typical_options:
+          - IMPS for small amounts and RTGS for large amounts
+          - NEFT for all non-urgent transfers
+          - Customer chooses the rail
+      - id: rbi_directions
+        name: RBI directions
+        weight: 3
+        applies_to: []
+        probes:
+          - Which RBI directions or circulars shape this flow (for example customer liability for unauthorised transactions, KYC master direction, deposit rules)?
+          - Which reporting, timelines or customer disclosures do they require?
+        typical_options:
+          - No specific directions are known
+          - Customer liability and reporting timelines apply
+          - KYC and deposit directions apply
+categories:
+  - id: payment_rails
+    name: Payment rails
+    weight: 4
+    applies_to: [payments_transfers, cards, corporate_banking]
+    must_have_in: [payments_transfers]
+    probes:
+      - Which rails carry the payment (internal book transfer, card network, ACH, wire or SWIFT, SEPA credit transfer or instant)?
+      - Which rail differences matter here (cut-offs, reversibility, limits, fees)?
+    typical_options:
+      - Internal book transfer only
+      - Card network
+      - ACH or wire transfer
+      - SEPA credit transfer or SEPA instant
+  - id: kyc_cdd
+    name: KYC and customer due diligence tiers
+    weight: 5
+    applies_to: [onboarding_kyc, accounts_deposits, lending, payments_transfers, corporate_banking]
+    must_have_in: [onboarding_kyc, lending]
+    probes:
+      - Which KYC or CDD tier does the customer need for this action (simplified, standard, enhanced)?
+      - Which documents or checks are required, and what happens when verification fails or expires?
+      - Which limits or features depend on the tier?
+    typical_options:
+      - Simplified tier with low limits
+      - Standard tier with full features
+      - Enhanced due diligence for high-risk customers
+  - id: aml_sanctions
+    name: AML and sanctions screening
+    weight: 5
+    applies_to: [payments_transfers, onboarding_kyc, corporate_banking, accounts_deposits, lending]
+    must_have_in: [onboarding_kyc, payments_transfers, corporate_banking]
+    probes:
+      - Which parties and transactions are screened against sanctions and watchlists, and when?
+      - What happens on a match or a possible match (hold, review queue, reject)?
+      - Who clears alerts, and is the customer told?
+    typical_options:
+      - Screen all parties before processing
+      - Screen only above a value threshold
+      - Screening happens in an existing upstream system
+  - id: maker_checker
+    name: Maker-checker and approval levels
+    weight: 4
+    applies_to: [corporate_banking, payments_transfers, accounts_deposits, lending]
+    must_have_in: [corporate_banking]
+    probes:
+      - Which actions need a second person to approve, and at which value thresholds?
+      - How many approval levels exist, and may the maker and checker be the same person?
+      - What happens on rejection, timeout or an approver being unavailable?
+    typical_options:
+      - Single approval above a threshold
+      - Two-level approval by value band
+      - No approval needed
+  - id: limits_velocity
+    name: Transaction limits and velocity rules
+    weight: 5
+    applies_to: [payments_transfers, cards, accounts_deposits, onboarding_kyc, corporate_banking, fraud_alerts]
+    must_have_in: [payments_transfers, cards, onboarding_kyc, fraud_alerts]
+    probes:
+      - Which per-transaction, daily, monthly and count limits apply, and how are they set (by tier, product, channel)?
+      - Which velocity or cooling-off rules apply, and what happens at the limit?
+      - Can limits be changed by the customer or the bank, and who approves that?
+    typical_options:
+      - Fixed limits per product
+      - Limits depend on customer tier
+      - Customer-configurable up to a bank ceiling
+  - id: cutoff_settlement
+    name: Cut-off times and settlement windows
+    weight: 4
+    applies_to: [payments_transfers, cards, corporate_banking]
+    must_have_in: [payments_transfers]
+    probes:
+      - What are the cut-off times, and what happens to requests after cut-off or on holidays?
+      - When does settlement happen, and when is the customer's balance affected?
+    typical_options:
+      - Same-day before cut-off, next business day after
+      - 24x7 real-time processing
+      - Batch processing at end of day
+  - id: fees_charges
+    name: Fees and charges
+    weight: 4
+    applies_to: []
+    must_have_in: [accounts_deposits, lending, cards]
+    probes:
+      - Which fees, penalties or charges apply, how are they calculated, and when are they debited?
+      - Are any fees waived, capped or disclosed up front, and are they refundable?
+    typical_options:
+      - Flat fee per event
+      - Percentage of the amount with a minimum and a cap
+      - No fee
+  - id: interest_calculation
+    name: Interest and penalty calculation
+    weight: 4
+    applies_to: [accounts_deposits, lending]
+    must_have_in: [accounts_deposits, lending]
+    probes:
+      - How is interest or a penalty calculated (rate source, day-count basis, compounding, rounding)?
+      - Which events change the rate (early closure, delay, tier) and how is tax applied?
+    typical_options:
+      - Rate from a product table with daily accrual
+      - Fixed penalty percentage on the amount
+      - Contractual rate agreed per customer
+  - id: credit_decisioning
+    name: Credit decisioning
+    weight: 5
+    applies_to: [lending]
+    must_have_in: [lending]
+    probes:
+      - Which inputs drive the decision (income, credit score, existing obligations, collateral)?
+      - Is the decision automatic, assisted or manual, and what are the outcomes (approve, decline, refer)?
+      - What must the customer be told, and can they appeal?
+    typical_options:
+      - Automatic decision with a manual referral band
+      - Fully manual underwriting
+      - Rules-based approval up to a limit
+  - id: reversals_refunds
+    name: Reversals, refunds and chargebacks
+    weight: 5
+    applies_to: [payments_transfers, cards, fraud_alerts, customer_service]
+    must_have_in: [payments_transfers, cards]
+    probes:
+      - When does a reversal or refund happen, automatically or on request, and within what time?
+      - What happens to fees, partial refunds and refunds to a closed account?
+      - How are chargebacks or scheme disputes raised, evidenced and tracked?
+    typical_options:
+      - Automatic reversal within one business day
+      - Refund only after customer request and review
+      - Scheme-defined chargeback process
+  - id: dispute_handling
+    name: Dispute handling
+    weight: 5
+    applies_to: [cards, customer_service, fraud_alerts]
+    must_have_in: [cards, customer_service]
+    probes:
+      - What time limits apply to raising and resolving a dispute, and what evidence is needed?
+      - Is a provisional credit given, when, for how much, and how is it reversed if the dispute fails?
+      - How does the customer track status and escalate?
+    typical_options:
+      - Provisional credit within a few days, final decision after investigation
+      - No provisional credit until the claim is accepted
+      - Provisional credit only for low-value claims
+  - id: sla_escalation
+    name: SLA and escalation
+    weight: 4
+    applies_to: [customer_service]
+    must_have_in: [customer_service]
+    probes:
+      - Which response and resolution times apply by priority, and how is the clock paused or stopped?
+      - What happens on breach, and who is the next escalation level?
+    typical_options:
+      - Single SLA for all complaints
+      - SLA by priority and category
+      - SLA set by the regulator
+  - id: reconciliation
+    name: Reconciliation
+    weight: 3
+    applies_to: [payments_transfers, cards, corporate_banking, accounts_deposits]
+    must_have_in: [payments_transfers, cards]
+    probes:
+      - Which ledgers, partner files or settlement reports must be matched, and how often?
+      - How are breaks detected, assigned, aged and cleared?
+    typical_options:
+      - Daily automated reconciliation with a break queue
+      - Intraday reconciliation
+      - Manual reconciliation by operations
+  - id: idempotency
+    name: Idempotency and duplicate prevention
+    weight: 4
+    applies_to: [payments_transfers, cards, corporate_banking]
+    must_have_in: [payments_transfers]
+    probes:
+      - How is a duplicate request detected (reference, amount and time window) and what does the customer see?
+      - What happens on retries after a timeout or an unknown outcome?
+    typical_options:
+      - Unique client reference per request
+      - Duplicate check on amount, payee and time window
+      - Provided by an upstream system
+  - id: audit_retention
+    name: Audit trail and record retention
+    must_have: true
+    weight: 4
+    probes:
+      - Which events and decisions must be recorded, with who, when and what changed?
+      - How long are records retained, and how are they retrieved for audit or legal requests?
+    typical_options:
+      - Full audit of every state change
+      - Audit of approvals and overrides only
+      - Retention set by regulation (state the period)
+  - id: consent_notification
+    name: Customer consent and notification
+    weight: 3
+    applies_to: []
+    must_have_in: [payments_transfers, cards, onboarding_kyc, fraud_alerts]
+    probes:
+      - Which consents or confirmations must be captured, stored and withdrawable?
+      - Which events notify the customer, by which channel and how quickly?
+    typical_options:
+      - Explicit consent captured and stored
+      - Notification by SMS and push
+      - Notification by email only
+  - id: fraud_risk_checks
+    name: Fraud and risk checks
+    weight: 5
+    applies_to: [payments_transfers, cards, accounts_deposits, onboarding_kyc, lending, fraud_alerts, corporate_banking]
+    must_have_in: [fraud_alerts, payments_transfers, cards]
+    probes:
+      - Which fraud or risk checks run, in which order, and what actions result (allow, step-up, hold, block)?
+      - How does the customer confirm or deny, and what happens if they do not respond?
+      - How are false positives handled and fed back?
+    typical_options:
+      - Real-time risk score with step-up authentication
+      - Rule-based blocks with manual review
+      - Post-transaction monitoring only
+  - id: regulatory_reporting
+    name: Regulatory reporting
+    weight: 3
+    applies_to: []
+    must_have_in: [lending, onboarding_kyc, corporate_banking]
+    probes:
+      - Which regulatory reports, thresholds or suspicious-activity filings does this feed?
+      - What data, timing and ownership do they need?
+    typical_options:
+      - No new regulatory reporting
+      - Threshold-based transaction reporting
+      - Suspicious activity reporting
+  - id: data_privacy
+    name: Data privacy
+    weight: 4
+    applies_to: []
+    must_have_in: [onboarding_kyc, customer_service, lending]
+    probes:
+      - Which personal data is collected, for what purpose, and who may see it?
+      - How are masking, consent, retention limits and deletion or access requests handled?
+    typical_options:
+      - Collect only what is needed and mask in the UI
+      - Customer consent per purpose
+      - Governed by existing privacy policy
+  - id: channels
+    name: Channel differences
+    weight: 3
+    applies_to: []
+    probes:
+      - Which channels are in scope (mobile, web, branch, call centre) and do rules or features differ by channel?
+      - How is the customer authenticated in each channel?
+    typical_options:
+      - Mobile and web only
+      - All channels with the same rules
+      - Branch and call centre assisted flows differ
+  - id: business_continuity
+    name: Business continuity
+    weight: 2
+    applies_to: []
+    probes:
+      - What must keep working during an outage, and what is the recovery target?
+      - How are in-flight transactions handled if a dependency fails?
+    typical_options:
+      - Queue and replay when a dependency recovers
+      - Fail fast with a clear message
+      - Fallback to manual processing
+actors:
+  - { id: customer, name: Retail customer, description: "Individual account holder" }
+  - { id: corporate_customer, name: Corporate customer, description: "Business customer and its authorised users" }
+  - { id: relationship_manager, name: Relationship manager, description: "Staff member who serves corporate or priority customers" }
+  - { id: operations_analyst, name: Operations analyst, description: "Back-office staff who process and investigate" }
+  - { id: maker, name: Maker, description: "Person who initiates a request that needs approval" }
+  - { id: checker, name: Checker, description: "Person who approves or rejects a maker's request" }
+  - { id: compliance_officer, name: Compliance officer, description: "Person who reviews AML, sanctions and regulatory items" }
+  - { id: fraud_analyst, name: Fraud analyst, description: "Person who reviews alerts and blocks" }
+  - { id: contact_centre_agent, name: Contact centre agent, description: "Person who assists customers by phone or chat" }
