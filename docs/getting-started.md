@@ -21,7 +21,7 @@ no login. One person uses it at a time. It needs the internet only to reach the 
 | Python 3.11 or newer | `python3 --version` | python.org |
 | git | `git --version` | git-scm.com |
 | uv (installs everything else) | `uv --version` | `pip install uv` or docs.astral.sh/uv |
-| An NVIDIA API key (starts with `nvapi-`) | | build.nvidia.com, sign in, then Get API Key |
+| An API key: Anthropic (console.anthropic.com) or NVIDIA (build.nvidia.com, starts with `nvapi-`) | | You need one; both is fine |
 
 The key is only needed to run real scenarios. The test suite and the offline evals work without
 one.
@@ -46,25 +46,33 @@ uv run story-agent --help # lists run, resume, publish, memory, evals, online
 
 ### 4. Set your key
 
-Create a key at build.nvidia.com (sign in, then Get API Key). One key works for every model.
-The tool reads it from the environment variable `NVIDIA_API_KEY`. It does **not** read the `.env`
-file by itself, so set it in your terminal:
+The agent supports two providers and you can set either or both:
+
+| Provider | Variable | Generator / judge |
+|---|---|---|
+| Anthropic (faster, paid; API credit is separate from a Claude subscription) | `ANTHROPIC_API_KEY` | `claude-sonnet-5-5` / `claude-opus-5-5` |
+| NVIDIA (hosted, slower reasoning models) | `NVIDIA_API_KEY` | `nvidia/nemotron-3-ultra-550b-a55b` |
+
+The tool reads keys from the environment only. It does **not** read the `.env` file.
 
 ```bash
-export NVIDIA_API_KEY="nvapi-..."            # macOS and Linux
-# PowerShell: $env:NVIDIA_API_KEY="nvapi-..."
+export ANTHROPIC_API_KEY="..."               # macOS and Linux
+export NVIDIA_API_KEY="nvapi-..."
 ```
 
-**The easiest way, on any machine, including a codespace where the GitHub secrets do not arrive:**
+The easy way, which also remembers them for next time:
 
 ```bash
 source scripts/setup_keys.sh
 ```
 
-It asks for the key without showing what you type,
-saves them in a private file in your home folder (`~/.nvidia_env`, readable only by you, outside
-the repository), loads them into this terminal, and makes every new terminal load them too. It
-never prints a key. Run it again to replace a key. Delete `~/.nvidia_env` to remove them.
+It asks for each key without showing what you type (press Enter to skip one, but give at least
+one), saves them in a private file in your home folder (`~/.nvidia_env`, readable only by you,
+outside the repository), loads them, and never prints a key. Run it again to replace a key.
+
+Which provider runs: with both keys set, Anthropic is used. Pick one explicitly with
+`uv run story-agent --provider nvidia run "..."` or `export STORY_AGENT_PROVIDER=nvidia`.
+`uv run story-agent models --best` lists the strongest models your key can use.
 
 The `export` line above does the same for one terminal window only. Where the key goes, by setup:
 
@@ -75,7 +83,7 @@ The `export` line above does the same for one terminal window only. Where the ke
 | A server | The environment of the account that runs it |
 | GitHub Actions | Repository Settings, Secrets, `NVIDIA_API_KEY` |
 
-One NVIDIA key works for every model, including the judge, so you only set `NVIDIA_API_KEY`.
+One key per provider works for all of that provider's models, including the judge.
 
 Never put the key in a file you commit, a chat or a screenshot. If a key is exposed, revoke it
 in the NVIDIA console and make a new one. To use another variable name, change `api_key_env` in
@@ -210,7 +218,7 @@ plumbing work, not how good the real model's stories are. Only `--live` tests th
 
 | You see | Likely cause and fix |
 |---|---|
-| `NVIDIA_API_KEY is not set` | Run the `export` line again in this terminal |
+| `... is not set` | Run the `export` line for that provider again, or use `--provider` for the one you have |
 | `There is no terminal to ask you questions` | You are not in an interactive terminal. Use `--answers FILE` |
 | `no such file ... config` or missing prompts | Run from the repository folder, or set `STORY_AGENT_CONFIG_DIR` |
 | `Paused: ...` and a `resume` hint | The run is saved. Fix what it names and run `resume` |

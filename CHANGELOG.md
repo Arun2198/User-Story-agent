@@ -7,6 +7,7 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Changed
+- Two providers, chosen at run time: Anthropic (`claude-sonnet-5-5` generates, `claude-opus-5-5` judges) and NVIDIA. `provider: auto|anthropic|nvidia` in `config/models.yaml`, `STORY_AGENT_PROVIDER`, or `--provider`. `story-agent models --best` ranks live model ids. Keys are `ANTHROPIC_API_KEY` and `NVIDIA_API_KEY`; `scripts/setup_keys.sh` asks for either or both (ADR 0013).
 - `scripts/setup_keys.sh` saves the NVIDIA key privately and loads them, for machines where Codespaces secrets do not arrive.
 - The judge model is `nvidia/nemotron-3-ultra-550b-a55b`. One key (`NVIDIA_API_KEY`) is used for every model. Token limits are off by default and thinking is left on. `story-agent models` lists live model ids; `story-agent check` times each model.
 - The model provider is now NVIDIA's hosted API through `NvidiaTransport`. The Anthropic transport, SDK dependency and key variable are removed. The key is `NVIDIA_API_KEY`; models, base URL and structured-output mode are in `config/models.yaml` (ADR 0012).

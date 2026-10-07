@@ -3,6 +3,9 @@
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
   "postCreateCommand": "pip install uv && uv sync --locked",
   "secrets": {
+    "ANTHROPIC_API_KEY": {
+      "description": "Anthropic API key from console.anthropic.com. Optional if NVIDIA_API_KEY is set. Needed to run real scenarios; the tests and offline evals work without it."
+    },
     "NVIDIA_API_KEY": {
       "description": "NVIDIA API key (starts with nvapi-) from build.nvidia.com. Needed to run real scenarios; the tests and offline evals work without it."
     }

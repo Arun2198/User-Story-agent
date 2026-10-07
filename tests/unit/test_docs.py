@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ["threat-model.md", "risk-register.md", "model-card.md"]
@@ -46,11 +47,10 @@ def test_the_model_card_prompt_versions_match_the_prompts() -> None:
 
 def test_the_model_card_names_the_configured_models() -> None:
     card = (ROOT / "docs" / "model-card.md").read_text(encoding="utf-8")
-    models = (ROOT / "config" / "models.yaml").read_text(encoding="utf-8")
-    for key in ("generator", "judge"):
-        value = re.search(rf"^{key}: (\S+)", models, re.M)
-        assert value
-        assert value.group(1) in card
+    raw = yaml.safe_load((ROOT / "config" / "models.yaml").read_text(encoding="utf-8"))
+    for block in raw["providers"].values():
+        for key in ("generator", "judge"):
+            assert block[key] in card
 
 
 def test_the_docs_make_no_certification_claim_and_name_no_author_tool() -> None:

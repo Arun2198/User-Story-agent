@@ -9,17 +9,22 @@ checked, not a model of its own.
 
 Model names live in `config/models.yaml` only. At the time of writing:
 
-| Role | Config key | Value |
+| Provider | Generator (every pipeline call) | Judge (evals and sampled online scoring) |
 |---|---|---|
-| Generator (every pipeline call) | `generator` | `nvidia/nemotron-3.5-lightning-30b-a3b` |
-| Judge (evals and sampled online scoring) | `judge` | `nvidia/nemotron-3-ultra-550b-a55b` |
+| `anthropic` | `claude-sonnet-5-5` | `claude-opus-5-5` |
+| `nvidia` | `nvidia/nemotron-3-ultra-550b-a55b` | `nvidia/nemotron-3-ultra-550b-a55b` |
 
-Both are served by NVIDIA's hosted API (`config/models.yaml`, ADR 0012). Model ids get retired (an earlier choice was, and
-the API answered 410), so check them with `story-agent models` before a live run. The judge is a
-different, larger model than the generator, so it does not mark its own work. It uses the same API key. Calls use temperature 0 and NVIDIA's guided JSON
-output, but output is not guaranteed identical between runs. A response cache, canonical
-ordering and ids set by code carry most of the repeatability, and a stability eval measures
-the rest. The prices in config are nominal numbers for the cost budget, not NVIDIA's billing.
+The provider is chosen by `provider` in `config/models.yaml` (`auto`, `anthropic` or `nvidia`), by
+`STORY_AGENT_PROVIDER`, or by `--provider` on the command line. With `auto`, the first provider whose
+key is set is used (Anthropic first). ADR 0013 has the detail. The NVIDIA models are served by NVIDIA's
+hosted API (ADR 0012). Model ids get retired (an earlier choice was, and the API answered 410), so
+check them with `story-agent models` before a live run. On Anthropic the judge is a larger model than
+the generator, so it does not mark its own work. On NVIDIA both roles currently use the same model;
+pick a different family with `story-agent models --best`. Each provider uses one API key for all of its
+models. NVIDIA calls use temperature 0 and guided JSON output, but output is not guaranteed identical
+between runs. A response cache, canonical ordering and ids set by code carry most of the repeatability,
+and a stability eval measures the rest. The prices in config are nominal numbers for the cost budget,
+not the providers' billing.
 
 ## Intended use
 
@@ -89,7 +94,7 @@ Offline results at the time of writing:
 | Memory: question-count reduction | about 0.68 |
 | Memory: contradiction handling, stale misapplication, cross-workspace leaks | 1.0, 0, 0 |
 
-Live results (real model, judge scores, stability): **not run yet**. They need an NVIDIA API key. The
+Live results (real model, judge scores, stability): **not run yet**. They need an Anthropic or NVIDIA API key. The
 first run is saved as the live baseline, and the drift check uses it.
 
 | Date | Change | Live result |

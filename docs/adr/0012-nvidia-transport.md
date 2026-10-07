@@ -1,6 +1,6 @@
 # 0012. NVIDIA-hosted models as the only provider
 
-- Status: accepted
+- Status: accepted; amended by 0013 (Anthropic is a second provider)
 - Date: 2026-10-07
 - Supersedes: 0002
 
