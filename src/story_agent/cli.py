@@ -1,4 +1,4 @@
-"""Command line interface. Only the ``memory`` commands exist so far."""
+"""Command line interface: run, resume, memory and evals."""
 
 from __future__ import annotations
 
@@ -17,7 +17,20 @@ from story_agent.evals.report import to_json, to_markdown
 from story_agent.evals.runner import COMPONENTS, SuiteOptions, run_suite
 from story_agent.memory.recall import is_stale
 from story_agent.memory.store import MemoryStoreError, SqliteMemoryStore, UnsafeContentError
-from story_agent.schema import MemoryEntry, MemoryType, utcnow
+from story_agent.runcmd import (
+    EXIT_ERROR,
+    EXIT_NO_TERMINAL,
+    EXIT_OK,
+    Chosen,
+    NoTerminalError,
+    build_runtime,
+    choose_responder,
+    default_memory_dir,
+    default_runs_dir,
+    summarize,
+)
+from story_agent.schema import MemoryEntry, MemoryType, Scenario, utcnow
+from story_agent.session import RunOutcome, Session, SessionError
 
 app = typer.Typer(no_args_is_help=True, help="Turn scenarios into user stories.")
 memory_app = typer.Typer(no_args_is_help=True, help="Inspect and manage saved memory.")
@@ -157,6 +170,86 @@ def clear_cmd(
     count = store.clear()
     store.close()
     typer.echo(f"cleared {count} entries from workspace '{workspace}'")
+
+
+# ---- run and resume --------------------------------------------------------------
+
+Answers = Annotated[
+    Path | None,
+    typer.Option(
+        "--answers",
+        help="YAML or JSON file that answers every question, to run without a terminal.",
+    ),
+]
+RunsDir = Annotated[
+    Path | None, typer.Option("--runs-dir", help="Where runs are saved (STORY_AGENT_RUNS_DIR).")
+]
+
+
+def _finish(outcome: RunOutcome, chosen: Chosen, runs_dir: Path) -> None:
+    lines, code = summarize(outcome, chosen.stopped, runs_dir)
+    for line in lines:
+        typer.echo(line, err=code != EXIT_OK)
+    raise typer.Exit(code)
+
+
+@app.command("run")
+def run_cmd(  # noqa: PLR0913, PLR0917  (CLI options)
+    scenario: Annotated[str, typer.Argument(help="The scenario, in plain language.")],
+    notes: Annotated[str, typer.Option(help="Extra notes about the scenario.")] = "",
+    workspace: Workspace = "default",
+    answers: Answers = None,
+    runs_dir: RunsDir = None,
+    memory_dir: MemoryDir = None,
+    no_memory: Annotated[bool, typer.Option("--no-memory", help="Do not use memory.")] = False,
+) -> None:
+    """Turn a scenario into reviewed user stories."""
+    root = default_runs_dir(runs_dir)
+    try:
+        chosen = choose_responder(answers)
+        scenario_model = Scenario(text=scenario, notes=notes, workspace=workspace)
+        session = Session(
+            build_runtime(default_config_dir(), root, default_memory_dir(memory_dir), not no_memory)
+        )
+    except NoTerminalError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_NO_TERMINAL) from exc
+    except (ConfigError, ValueError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    try:
+        outcome = session.start(scenario_model, chosen.responder)
+    finally:
+        session.rt.close()
+    _finish(outcome, chosen, root)
+
+
+@app.command("resume")
+def resume_cmd(
+    run_id: Annotated[str, typer.Argument(help="The id printed when the run paused.")],
+    answers: Answers = None,
+    runs_dir: RunsDir = None,
+    memory_dir: MemoryDir = None,
+    no_memory: Annotated[bool, typer.Option("--no-memory", help="Do not use memory.")] = False,
+) -> None:
+    """Continue a paused run from its checkpoint."""
+    root = default_runs_dir(runs_dir)
+    try:
+        chosen = choose_responder(answers)
+        session = Session(
+            build_runtime(default_config_dir(), root, default_memory_dir(memory_dir), not no_memory)
+        )
+        try:
+            outcome = session.resume(run_id, chosen.responder)
+        finally:
+            session.rt.close()
+    except NoTerminalError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_NO_TERMINAL) from exc
+    except (ConfigError, SessionError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    _finish(outcome, chosen, root)
 
 
 # ---- evals ---------------------------------------------------------------------

@@ -7,6 +7,10 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
+- Run graph (LangGraph, SQLite checkpoints) that pauses for answers, memory conflicts, the readiness gate, story review and memory approval.
+- `story-agent run` and `story-agent resume`, with terminal prompts or an `--answers` file; exit codes for paused, refused and stopped runs.
+- Answers file settings for unanswered questions, conflicts, review and memory.
+- `Flow.restore`, so a stage can run from saved state in a new process.
 - End-to-end evals: 14 synthetic banking and generic cases with hidden answer keys, a simulated user, an offline scripted model, metrics for discovery, stories, guardrails, preferences and cost.
 - Memory app eval (off then on per case, conflicts, stale entries, isolation) and stability eval (repeat runs).
 - Eval runner with baselines, regression tolerance and exit codes; `story-agent evals run` and `evals add-case`.

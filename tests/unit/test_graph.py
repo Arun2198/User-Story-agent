@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,14 @@ from story_agent.session import RunOutcome, Session, SessionError
 
 PROMPTS = Path(__file__).resolve().parents[2] / "prompts"
 CASES = {c.id: c for c in load_cases_dir()}
+OPEN: list[Runtime] = []
+
+
+@pytest.fixture(autouse=True)
+def _close_runtimes() -> Iterator[None]:
+    yield
+    while OPEN:
+        OPEN.pop().close()
 
 
 class Scripted:
@@ -37,6 +46,7 @@ def make_session(
     config: AppConfig,
     packs: PackSet,
     tmp: Path,
+    *,
     degrade: frozenset[str] = frozenset(),
     memory: bool = False,
 ) -> Session:
@@ -47,6 +57,7 @@ def make_session(
         tmp / "runs",
         tmp / "memory" if memory else None,
     )
+    OPEN.append(runtime)
     return Session(runtime)
 
 
@@ -124,6 +135,7 @@ def test_a_resume_does_not_repeat_the_model_calls_before_the_pause(
     capture = CapturingTransport(GoldModel(case, packs))
     deps = build_deps(app_config, packs, PROMPTS, capture)
     runtime = Runtime(deps, build_pipeline(app_config.hooks, default_registry()), tmp_path / "runs")
+    OPEN.append(runtime)
     session = Session(runtime)
     assert session.start(scenario_of(case), Scripted(), "run-n").status == "paused"
     before = len(capture.requests)
@@ -258,7 +270,7 @@ def test_a_model_that_leaks_pii_is_blocked(
     app_config: AppConfig, packs: PackSet, tmp_path: Path
 ) -> None:
     case = CASES["bk-card-dispute"]
-    session = make_session(case, app_config, packs, tmp_path, frozenset({"leak_pii"}))
+    session = make_session(case, app_config, packs, tmp_path, degrade=frozenset({"leak_pii"}))
     outcome = session.start(scenario_of(case), SimulatedResponder(SimulatedUser(case)), "run-leak")
     assert outcome.status == "blocked"
     assert "PII_LEAK" in outcome.message
@@ -286,7 +298,9 @@ def test_a_responder_that_never_gives_a_valid_reply_is_stopped(
         session.start(scenario_of(case), junk, "run-junk")
 
 
-def test_checkpoint_files_are_private(app_config: AppConfig, packs: PackSet, tmp_path: Path) -> None:
+def test_checkpoint_files_are_private(
+    app_config: AppConfig, packs: PackSet, tmp_path: Path
+) -> None:
     case = CASES["bk-card-dispute"]
     session = make_session(case, app_config, packs, tmp_path)
     session.start(scenario_of(case), Scripted(), "run-perm")
@@ -313,3 +327,134 @@ def test_redaction_survives_a_resume(app_config: AppConfig, packs: PackSet, tmp_
     text = json.dumps(outcome.state.model_dump(mode="json")["stories"])
     for planted in case.planted_pii:
         assert planted.value not in text
+
+
+def test_a_changed_answer_pauses_for_the_conflict_and_the_memory_is_updated(
+    app_config: AppConfig, packs: PackSet, tmp_path: Path
+) -> None:
+    case = CASES["bk-card-dispute"]
+    assert case.memory.changed
+    session = make_session(case, app_config, packs, tmp_path, memory=True)
+    first = finished(
+        session.start(scenario_of(case), SimulatedResponder(SimulatedUser(case)), "run-m1")
+    )
+    assert first.memory_report is not None
+    assert first.memory_report["saved"]
+    key = {**case.answer_key, **case.memory.changed}
+    second_user = SimulatedResponder(SimulatedUser(case, answer_key=key))
+    seen = Scripted(second_user.respond)
+    second = finished(session.start(scenario_of(case), seen, "run-m2"))
+    kinds = [p["kind"] for p in seen.seen]
+    assert "conflicts" in kinds
+    assert second.memory_report is not None
+    assert second.state is not None
+    assert second.state.conflict_resolutions
+    assert "memory" in kinds
+
+
+def test_a_conflict_left_undecided_pauses_the_run(
+    app_config: AppConfig, packs: PackSet, tmp_path: Path
+) -> None:
+    case = CASES["bk-card-dispute"]
+    session = make_session(case, app_config, packs, tmp_path, memory=True)
+    finished(session.start(scenario_of(case), SimulatedResponder(SimulatedUser(case)), "run-c1"))
+    key = {**case.answer_key, **case.memory.changed}
+    user = SimulatedResponder(SimulatedUser(case, answer_key=key))
+    outcome = session.start(
+        scenario_of(case),
+        Scripted(lambda p: None if p["kind"] == "conflicts" else user.respond(p)),
+        "run-c2",
+    )
+    assert outcome.status == "paused"
+    assert outcome.pending is not None
+    assert outcome.pending["kind"] == "conflicts"
+
+
+def test_memory_is_not_saved_when_the_reply_leaves_proposals_out(
+    app_config: AppConfig, packs: PackSet, tmp_path: Path
+) -> None:
+    case = CASES["bk-card-dispute"]
+    session = make_session(case, app_config, packs, tmp_path, memory=True)
+    user = SimulatedResponder(SimulatedUser(case))
+    outcome = finished(
+        session.start(
+            scenario_of(case),
+            Scripted(lambda p: {"decisions": {}} if p["kind"] == "memory" else user.respond(p)),
+            "run-deny",
+        )
+    )
+    assert outcome.memory_report is not None
+    assert outcome.memory_report["saved"] == []
+    assert outcome.memory_report["rejected"]
+
+
+def test_more_rounds_can_be_requested_at_the_gate_until_the_limit(
+    app_config: AppConfig, packs: PackSet, tmp_path: Path
+) -> None:
+    case = CASES["bk-card-dispute"]
+    session = make_session(case, app_config, packs, tmp_path)
+    user = SimulatedResponder(SimulatedUser(case))
+
+    def reply(payload: dict[str, Any]) -> dict[str, Any] | None:
+        if payload["kind"] == "gate" and payload["ready"]:
+            decision = "go" if payload["note"] else "more"
+            return {"decision": decision, "confirmed_by": "user"}
+        return user.respond(payload)
+
+    seen = Scripted(reply)
+    outcome = session.start(scenario_of(case), seen, "run-more")
+    gates = [p for p in seen.seen if p["kind"] == "gate"]
+    assert len(gates) >= 2
+    assert outcome.state is not None
+    assert len(outcome.state.rounds) <= 3
+    # the limit or "nothing left to ask" is reported back, and the gate still holds
+    assert any(g["note"] for g in gates[1:])
+
+
+def test_the_go_ahead_is_only_ever_granted_by_the_gate() -> None:
+    src = Path(__file__).resolve().parents[2] / "src" / "story_agent"
+    setters = [
+        p.relative_to(src).as_posix()
+        for p in src.rglob("*.py")
+        if "go_ahead = True" in p.read_text(encoding="utf-8")
+    ]
+    assert setters == ["clarify/readiness.py"]
+    callers = [
+        p.relative_to(src).as_posix()
+        for p in src.rglob("*.py")
+        if "grant_go_ahead(" in p.read_text(encoding="utf-8") and p.name not in {"readiness.py"}
+    ]
+    assert callers == ["flow.py"]
+    graph_calls = (src / "graph.py").read_text(encoding="utf-8").count("flow.go_ahead(")
+    assert graph_calls == 1
+
+
+class Flaky:
+    """Fails on chosen call numbers, then behaves like the wrapped transport."""
+
+    def __init__(self, inner: GoldModel, fail_on: set[int]) -> None:
+        self.inner = inner
+        self.fail_on = fail_on
+        self.count = 0
+
+    def send(self, request: Any, json_schema: dict[str, Any]) -> Any:
+        self.count += 1
+        if self.count in self.fail_on:
+            raise RuntimeError("the model is down")
+        return self.inner.send(request, json_schema)
+
+
+def test_a_failure_mid_run_resumes_from_the_last_finished_stage(
+    app_config: AppConfig, packs: PackSet, tmp_path: Path
+) -> None:
+    case = CASES["bk-card-dispute"]
+    flaky = Flaky(GoldModel(case, packs), {3})
+    deps = build_deps(app_config, packs, PROMPTS, flaky)
+    runtime = Runtime(deps, build_pipeline(app_config.hooks, default_registry()), tmp_path / "runs")
+    OPEN.append(runtime)
+    session = Session(runtime)
+    with pytest.raises(RuntimeError, match="down"):
+        session.start(scenario_of(case), SimulatedResponder(SimulatedUser(case)), "run-crash")
+    outcome = finished(session.resume("run-crash", SimulatedResponder(SimulatedUser(case))))
+    assert outcome.state is not None
+    assert outcome.state.stories

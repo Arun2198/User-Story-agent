@@ -62,6 +62,7 @@ class Runtime:
     pipeline: HookPipeline
     runs_dir: Path
     memory_dir: Path | None = None
+    on_close: list[Callable[[], None]] = field(default_factory=list)
     _stores: dict[str, SqliteMemoryStore] = field(default_factory=dict)
 
     def memory_for(self, workspace: str) -> MemoryStore | None:
@@ -75,10 +76,13 @@ class Runtime:
         return self._stores[workspace]
 
     def close(self) -> None:
-        """Close every open memory store."""
+        """Close every open memory store and anything registered in ``on_close``."""
         for store in self._stores.values():
             store.close()
         self._stores.clear()
+        for closer in self.on_close:
+            closer()
+        self.on_close.clear()
 
 
 class InterruptView(Protocol):

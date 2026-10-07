@@ -34,6 +34,8 @@ phase shown), **manual** (a review step).
 | Component evals gate regressions | `config/evals.yaml`, `evals/components/`, `tests/unit/evals/` (redaction, injection, scope guard) | enforced |
 | Packs are data; pack validation | `discovery/packs.py`, `tests/unit/discovery/test_packs.py` | enforced |
 | Clarification gate (6 per round, 3 rounds, explicit go-ahead) | `clarify/`, `tests/unit/clarify/` | enforced |
+| Non-interactive runs only with `--answers`; the go-ahead is set only at the graph's gate | `runcmd.choose_responder`, `graph.RunGraph.gate`, `tests/unit/test_run_cli.py`, `tests/unit/test_graph.py` | enforced |
+| Runs can pause and resume from a private checkpoint | `session.py`, `runs/<id>/checkpoint.sqlite` (0600), `tests/unit/test_graph.py` | enforced |
 | Every story grounded and traceable | `guardrails/grounding.py`, `pipeline/requirements.py`, `pipeline/numbers.py`, `GroundingHook`, `tests/unit/pipeline/` | enforced |
 | Deterministic ids, ordering and ID stability | `pipeline/postprocess.py`, `IdStabilityHook`, Hypothesis tests | enforced |
 | Prompts: few-shot outputs match their schemas | `tests/unit/test_prompt_skeleton.py` | enforced |

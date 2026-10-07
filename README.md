@@ -16,6 +16,53 @@ cp .env.example .env   # then set ANTHROPIC_API_KEY in your shell
 uv run pytest
 ```
 
+## Running
+
+```bash
+story-agent run "A customer disputes a card payment and expects a temporary credit." \
+    --workspace acme
+story-agent resume run-20261007-101500-3fa2
+```
+
+`run` asks clarifying questions in the terminal (at most 6 per round, 3 rounds), shows a
+readiness summary and waits for your go-ahead before drafting. You then approve, edit or
+reject each story, and approve each memory entry you want kept. Ctrl-C at any prompt
+leaves the run paused and saved; `resume` carries on from the last finished stage.
+
+Runs are saved in `runs/<run_id>/` (`--runs-dir` or `STORY_AGENT_RUNS_DIR`). The checkpoint
+holds the scenario as you typed it, so the folder is private to you (mode 0700, files 0600).
+The finished run is written to `runs/<run_id>/state.json`.
+
+### Without a terminal
+
+A run with no terminal must be given an answers file. Without one, `run` and `resume` exit
+with code 2 before any model call. The file answers only what it says; anything missing
+stops the run (exit code 3) so you can `resume` it later.
+
+```yaml
+# answers.yaml
+answers:                       # question id or category id: the reply you would type
+  dispute_handling: "Within 10 business days"
+  limits_velocity: "yes"       # "yes" confirms a remembered answer
+free_text: "At most 4 criteria per story."
+go_ahead: true                 # required, or the run stops at the readiness summary
+unanswered: judgment           # stop (default) | judgment | defer
+on_conflict: replace           # stop (default) | replace | exception
+review: approve_all            # none (default) | approve_all | a list of actions
+memory: none                   # none (default) | approve_all
+```
+
+`unanswered: judgment` records "use your judgment" as an explicit assumption on the stories
+that rely on it. `review: none` leaves stories waiting for you.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | finished |
+| 1 | error (bad config, bad file, unknown run, missing API key) |
+| 2 | no terminal and no `--answers` |
+| 3 | paused: waiting for input; run `resume` |
+| 4 | refused by scope, or stopped by a guardrail |
+
 ## Configuration
 
 All settings are in `config/`. Model names are in `config/models.yaml` only.
