@@ -1,3 +1,18 @@
-# Order matters. fail_mode: closed blocks the run on error, open logs and continues.
-pre: []
-post: []
+# Order matters. fail_mode: closed blocks the run on a hook error, open logs and continues.
+# per: run  -> once at the start of a run (pre) or at its end (post)
+# per: component -> around every pipeline component
+pre:
+  - { name: input_size, per: run, fail_mode: closed }
+  - { name: schema_version, per: run, fail_mode: closed }
+  - { name: scope_guard, per: run, fail_mode: closed }
+  - { name: redact, per: component, fail_mode: closed }
+  - { name: injection_scan, per: component, fail_mode: closed }
+  - { name: budget, per: component, fail_mode: closed }
+  - { name: record_prompt, per: component, fail_mode: open }
+post:
+  - { name: schema_validation, per: component, fail_mode: closed }
+  - { name: grounding, per: component, fail_mode: closed }
+  - { name: pii_leak, per: component, fail_mode: closed }
+  - { name: usage_accounting, per: component, fail_mode: closed }
+  - { name: metrics, per: component, fail_mode: open }
+  - { name: trace, per: component, fail_mode: open }
