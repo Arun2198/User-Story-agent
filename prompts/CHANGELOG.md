@@ -6,3 +6,5 @@ need an eval comparison recorded in `docs/model-card.md`.
 | Prompt | Version | Change |
 |---|---|---|
 | scope_check | 1 | First version. |
+| discover | 1 | First version. |
+| clarify | 1 | First version. |

@@ -7,6 +7,11 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
+- Domain packs: generic and banking (with an optional India rails sub-pack), loader and validator, deterministic domain detection.
+- `discover` stage and prompt: checklist coverage, grounded `stated` items, canonical ids.
+- `clarify` stage and prompt: ranked questions, rounds, answers, free text and whitelisted preferences, readiness summary and go-ahead gate.
+- `domain_detection` component eval.
+- Plain-text ingestor and the `Ingestor` interface.
 - Hook framework: protocol, registry, ordered pipeline from `hooks.yaml`, fail-closed and fail-open handling.
 - Guardrails: PII and secret redaction, prompt-injection detection with quarantine, grounding verifier, scope guard.
 - Pre and post hooks for input size, schema version, scope, redaction, injection, budget, prompt recording, schema validation, grounding, PII leak, usage accounting, metrics and trace.

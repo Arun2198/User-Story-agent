@@ -19,7 +19,7 @@ phase shown), **manual** (a review step).
 | Timeouts, backoff with jitter, transient-only retry | `llm.py` (`retry_transient`, SDK timeout) | enforced |
 | Token, cost and step budgets | `config/guardrails.yaml`; `BudgetHook` and `UsageAccountingHook` | enforced |
 | Tests: unit, integration, e2e, fake LLM | `tests/`, `fake_llm.py` | partial |
-| Hypothesis property tests | cache keys, redaction (no leak, stable, round trip), injection quarantine; IDs and ordering in phase 4 | partial |
+| Hypothesis property tests | cache keys, redaction, injection quarantine, deterministic ids, preferences whitelist | enforced |
 | Coverage 85% overall | `[tool.coverage.report] fail_under` | enforced |
 | Coverage 95% on guardrails and hooks | CI `quality`, `coverage report --fail-under=95` on those paths | enforced |
 | Offline evals as a regression gate | CI `evals` job, `config/evals.yaml` | planned (phase 5) |
@@ -32,6 +32,8 @@ phase shown), **manual** (a review step).
 | Memory TTL, deletion, no PII, workspace isolation | `memory/` and its tests and evals | planned (phase 3) |
 | Guardrails fail closed, observers fail open | `config/hooks.yaml`, `hooks/registry.py`, `tests/unit/hooks/test_hooks.py` | enforced |
 | Component evals gate regressions | `config/evals.yaml`, `evals/components/`, `tests/unit/evals/` (redaction, injection, scope guard) | enforced |
+| Packs are data; pack validation | `discovery/packs.py`, `tests/unit/discovery/test_packs.py` | enforced |
+| Clarification gate (6 per round, 3 rounds, explicit go-ahead) | `clarify/`, `tests/unit/clarify/` | enforced |
 | ADR per significant decision | `docs/adr/` | manual |
 
 External standards are referred to as "aligned with". This project makes no
