@@ -10,7 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture(scope="session")
 def app_config() -> AppConfig:
-    return load_config(ROOT / "config")
+    """The shipped config with the nvidia provider selected, so tests do not depend on keys."""
+    return load_config(ROOT / "config", env={"STORY_AGENT_PROVIDER": "nvidia"})
+
+
+@pytest.fixture(scope="session")
+def anthropic_config() -> AppConfig:
+    """The shipped config with the anthropic provider selected."""
+    return load_config(ROOT / "config", env={"STORY_AGENT_PROVIDER": "anthropic"})
 
 
 @pytest.fixture(scope="session")

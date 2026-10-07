@@ -1,34 +1,49 @@
-# Model names and the provider settings live here only.
-# Provider: NVIDIA-hosted models through an OpenAI-style endpoint. The key is read from the
-# environment variable named by api_key_env; it is never stored in a file.
-base_url: https://integrate.api.nvidia.com/v1
-api_key_env: NVIDIA_API_KEY
-# One NVIDIA key works for every model, so a single variable is enough.
-# How the JSON schema is enforced. Models differ, so the default tries each in turn and keeps
-# the first one the model accepts:
-#   guided_json: NVIDIA's nvext.guided_json     json_schema: OpenAI-style response_format
-#   none: the schema goes in the prompt and the reply is checked afterwards
-# Set one of them here to skip the trial.
-structured_output: auto
-# Extra request fields per model id, merged into every request for that model. Thinking is left
-# on, because these models need it to answer well. To switch it off for a model, for example:
-#   extra_body:
-#     nvidia/nemotron-3.5-lightning-30b-a3b: { chat_template_kwargs: { enable_thinking: false } }
-extra_body: {}
-temperature: 0
-# Model ids get retired (a 410 error says so). List the live ones with: story-agent models
-# The judge is a different, larger model than the generator, so it does not mark its own work.
-generator: nvidia/nemotron-3.5-lightning-30b-a3b
-judge: nvidia/nemotron-3-ultra-550b-a55b
-# Per-call output limit. null sends none, so the server's default applies and a reasoning
-# model is not cut off while it thinks. Set a number to cap every call.
-max_tokens: null
-# Reasoning models can take minutes to answer. A call is retried max_retries times after a timeout.
-timeout_s: 600
-max_retries: 3
+# Models and provider settings live here only. Keys come from environment variables, never files.
+#
+# provider: which one to use.
+#   auto       the first provider below whose key variable is set (anthropic, then nvidia)
+#   anthropic  Anthropic's API
+#   nvidia     NVIDIA-hosted models through an OpenAI-style endpoint (NIM)
+# Switch without editing this file:  story-agent --provider nvidia run "..."
+#                                    or set STORY_AGENT_PROVIDER=nvidia
+provider: auto
+
+# Shared by both providers (a provider block can override timeout_s and max_tokens).
+timeout_s: 600          # reasoning models can take minutes to answer
+max_retries: 3          # transient failures (timeouts, 429, 5xx) are retried this many times
 backoff_base_s: 1.0
-# Nominal USD per million tokens, used only for the cost budget and cost metrics. The hosted
-# free tier does not bill per token; set your real rate if you move to a paid host.
-prices:
-  nvidia/nemotron-3.5-lightning-30b-a3b: { input: 0.5, output: 0.5 }
-  nvidia/nemotron-3-ultra-550b-a55b: { input: 1.0, output: 1.0 }
+max_tokens: null        # null sends no per-call limit where the provider allows that
+
+providers:
+  anthropic:
+    api_key_env: ANTHROPIC_API_KEY
+    generator: claude-sonnet-5-5
+    judge: claude-opus-5-5     # a different, stronger model than the generator
+    # Claude 5.x models reject a temperature other than the default, so none is sent.
+    temperature: null
+    max_tokens: 16000          # Anthropic requires a limit on every call
+    # Nominal USD per million tokens, for the cost budget. Check Anthropic's pricing page.
+    prices:
+      claude-sonnet-5-5: { input: 2.0, output: 10.0 }
+      claude-opus-5-5: { input: 4.0, output: 20.0 }
+
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    # How the JSON schema is enforced. Models differ, so the default tries each in turn and keeps
+    # the first one the model accepts: guided_json (nvext), json_schema (response_format), none
+    # (schema in the prompt). Set one here to skip the trial.
+    structured_output: auto
+    temperature: 0
+    # Model ids get retired (a 410 error says so). List the live ones with: story-agent models
+    # Strongest ids to look for: story-agent models --best
+    generator: nvidia/nemotron-3-ultra-550b-a55b
+    judge: nvidia/nemotron-3-ultra-550b-a55b   # pick a different-family model from `models --best`
+    # Extra request fields per model id, merged into every request for that model. Thinking is
+    # left on because these models need it to answer well. To switch it off for a model, use
+    # for example: { nvidia/<id>: { chat_template_kwargs: { enable_thinking: false } } }
+    extra_body: {}
+    # Nominal figures for the cost budget only. The hosted free tier does not bill per token.
+    prices:
+      nvidia/nemotron-3-ultra-550b-a55b: { input: 1.0, output: 1.0 }
+      nvidia/nemotron-3.5-lightning-30b-a3b: { input: 0.5, output: 0.5 }

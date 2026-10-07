@@ -548,6 +548,7 @@ def test_models_command_lists_ids_and_checks_the_configured_ones(
     monkeypatch: pytest.MonkeyPatch, app_config: AppConfig
 ) -> None:
     monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    monkeypatch.setenv("STORY_AGENT_PROVIDER", "nvidia")
     ids = ["other/model", app_config.models.generator, app_config.models.judge]
     monkeypatch.setattr(NvidiaTransport, "list_models", lambda _self: sorted(ids))
     ok = runner.invoke(app, ["models"])
@@ -562,6 +563,7 @@ def test_models_command_lists_ids_and_checks_the_configured_ones(
 
 
 def test_models_command_needs_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STORY_AGENT_PROVIDER", "nvidia")
     monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
     result = runner.invoke(app, ["models"])
     assert result.exit_code == 1
@@ -572,14 +574,14 @@ def test_models_command_needs_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def stub_transport(monkeypatch: pytest.MonkeyPatch, handler: Any, **update: Any) -> None:
-    config = load_config(ROOT / "config")
+    config = load_config(ROOT / "config", env={"STORY_AGENT_PROVIDER": "nvidia"})
     models = config.models.model_copy(update=update)
 
     def build(trial: Any, env: Any = None) -> NvidiaTransport:
         client = httpx.Client(transport=httpx.MockTransport(handler))
         return NvidiaTransport("test-key", trial, client)
 
-    monkeypatch.setattr(cli, "transport_from_env", build)
+    monkeypatch.setattr(cli, "transport_for", build)
     monkeypatch.setattr(cli, "load_config", lambda _d: config.model_copy(update={"models": models}))
 
 

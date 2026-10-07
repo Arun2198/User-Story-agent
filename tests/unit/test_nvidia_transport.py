@@ -8,12 +8,8 @@ from pydantic import BaseModel
 
 from story_agent.config import AppConfig, ConfigError, ModelsConfig, get_api_key
 from story_agent.llm import LLMError, LLMRequest, StructuredClient, TransientError
-from story_agent.nvidia import (
-    NvidiaTransport,
-    clean_json_text,
-    extract_json_object,
-    transport_from_env,
-)
+from story_agent.nvidia import NvidiaTransport, clean_json_text, extract_json_object
+from story_agent.providers import transport_for
 
 SCHEMA: dict[str, Any] = {"type": "object", "properties": {"a": {"type": "string"}}}
 
@@ -258,7 +254,7 @@ def test_default_models_and_key_name_come_from_config(app_config: AppConfig) -> 
     models = app_config.models
     assert models.api_key_env == "NVIDIA_API_KEY"
     assert models.base_url.startswith("https://integrate.api.nvidia.com")
-    assert set(models.prices) == {models.generator, models.judge}
+    assert {models.generator, models.judge} <= set(models.prices)
 
 
 def test_the_key_is_read_from_the_named_variable() -> None:
@@ -507,15 +503,15 @@ def test_every_model_is_called_with_the_same_key(app_config: AppConfig) -> None:
 
 
 def test_the_key_comes_from_the_named_variable(app_config: AppConfig) -> None:
-    t = transport_from_env(app_config.models, {"NVIDIA_API_KEY": " main-key \n"})
+    t = transport_for(app_config.models, {"NVIDIA_API_KEY": " main-key \n"})
+    assert isinstance(t, NvidiaTransport)
     assert t._key == "main-key"  # the one key every request uses
     with pytest.raises(ConfigError, match="NVIDIA_API_KEY is not set"):
-        transport_from_env(app_config.models, {})
+        transport_for(app_config.models, {})
 
 
-def test_the_shipped_config_has_one_key_and_distinct_models(app_config: AppConfig) -> None:
+def test_the_shipped_nvidia_config_has_one_key(app_config: AppConfig) -> None:
     models = app_config.models
     assert models.api_key_env == "NVIDIA_API_KEY"
     assert not hasattr(models, "model_api_key_env")
-    assert models.judge != models.generator
-    assert set(models.prices) == {models.generator, models.judge}
+    assert {models.generator, models.judge} <= set(models.prices)

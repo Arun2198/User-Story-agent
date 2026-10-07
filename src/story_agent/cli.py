@@ -12,7 +12,14 @@ from typing import Annotated, Any
 import typer
 
 from story_agent import runcmd
-from story_agent.config import ConfigError, ModelsConfig, default_config_dir, load_config
+from story_agent.anthropic_transport import AnthropicTransport
+from story_agent.config import (
+    PROVIDER_ENV,
+    ConfigError,
+    ModelsConfig,
+    default_config_dir,
+    load_config,
+)
 from story_agent.discovery.packs import load_packs
 from story_agent.evals.cases import datasets_dir, load_case, save_case, validate_case
 from story_agent.evals.online.config import parse_online
@@ -30,7 +37,8 @@ from story_agent.evals.runner import (
 from story_agent.llm import LLMError, LLMRequest
 from story_agent.memory.recall import is_stale
 from story_agent.memory.store import MemoryStoreError, SqliteMemoryStore, UnsafeContentError
-from story_agent.nvidia import THINKING_OFF_CANDIDATES, NvidiaTransport, transport_from_env
+from story_agent.nvidia import THINKING_OFF_CANDIDATES, NvidiaTransport
+from story_agent.providers import best_models, transport_for
 from story_agent.publish import PublishBlocked, apply_plan, approve, service
 from story_agent.publish.base import NotEnabledError
 from story_agent.publish.service import (
@@ -70,6 +78,23 @@ app = typer.Typer(no_args_is_help=True, help="Turn scenarios into user stories."
 memory_app = typer.Typer(no_args_is_help=True, help="Inspect and manage saved memory.")
 evals_app = typer.Typer(no_args_is_help=True, help="Run and extend the evals.")
 online_app = typer.Typer(no_args_is_help=True, help="Traces, feedback and drift for finished runs.")
+
+
+@app.callback()
+def main(
+    provider: Annotated[
+        str | None,
+        typer.Option(
+            "--provider",
+            help="Model provider: auto, anthropic or nvidia (or set STORY_AGENT_PROVIDER).",
+        ),
+    ] = None,
+) -> None:
+    """Turn scenarios into user stories."""
+    if provider:
+        os.environ[PROVIDER_ENV] = provider
+
+
 app.add_typer(memory_app, name="memory")
 app.add_typer(evals_app, name="evals")
 app.add_typer(online_app, name="online")
@@ -216,15 +241,20 @@ def models_cmd(
     filter_: Annotated[
         str | None, typer.Option("--filter", help="Only ids containing this text.")
     ] = None,
+    best: Annotated[
+        bool, typer.Option("--best", help="Only the strongest families the provider offers.")
+    ] = False,
 ) -> None:
     """List the model ids your key can use, and check the configured generator and judge."""
     try:
         config = load_config(default_config_dir())
-        ids = transport_from_env(config.models).list_models()
+        ids = transport_for(config.models).list_models()
     except (ConfigError, LLMError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(EXIT_ERROR) from exc
-    shown = [i for i in ids if not filter_ or filter_.casefold() in i.casefold()]
+    shown = best_models(config.models.provider, ids) if best else ids
+    shown = [i for i in shown if not filter_ or filter_.casefold() in i.casefold()]
+    typer.echo(f"provider: {config.models.provider}")
     typer.echo("\n".join(shown))
     typer.echo(f"{len(shown)} of {len(ids)} models")
     missing = False
@@ -250,22 +280,25 @@ def check_cmd(
     """Send one tiny request to each configured model and report how long it takes."""
     try:
         config = load_config(default_config_dir())
-        transport = transport_from_env(config.models)
+        transport = transport_for(config.models)
     except ConfigError as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(EXIT_ERROR) from exc
     failed = False
+    typer.echo(f"provider: {config.models.provider}")
     for role in dict.fromkeys(("generator", "judge")):
         model = getattr(config.models, role)
         result = _timed(transport, model)
         typer.echo(f"{role}: {model}: {result}")
         failed = failed or result.startswith("FAILED")
-    if probe_thinking:
+    if probe_thinking and config.models.provider == "nvidia":
         _probe_thinking(config.models, config.models.generator)
+    elif probe_thinking:
+        typer.echo("\n--probe-thinking only applies to the nvidia provider.")
     raise typer.Exit(EXIT_ERROR if failed else EXIT_OK)
 
 
-def _timed(transport: NvidiaTransport, model: str) -> str:
+def _timed(transport: AnthropicTransport | NvidiaTransport, model: str) -> str:
     request = LLMRequest("check", "Return JSON only.", 'Reply with {"ok": true}.', model)
     started = time.monotonic()
     try:
@@ -275,7 +308,7 @@ def _timed(transport: NvidiaTransport, model: str) -> str:
     seconds = time.monotonic() - started
     return (
         f"ok in {seconds:.1f}s, {raw.usage.output_tokens} output tokens, "
-        f"structured output mode {transport.modes.get(model, 'fixed')}"
+        f"structured output mode {getattr(transport, 'modes', {}).get(model, 'native')}"
     )
 
 
@@ -286,7 +319,7 @@ def _probe_thinking(models: ModelsConfig, model: str) -> None:
         trial = models.model_copy(update={"extra_body": {model: extra} if extra else {}})
         started = time.monotonic()
         try:
-            raw = transport_from_env(trial).send(
+            raw = transport_for(trial).send(
                 LLMRequest("check", "Return JSON only.", 'Reply with {"ok": true}.', model),
                 CHECK_SCHEMA,
             )

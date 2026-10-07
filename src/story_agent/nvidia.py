@@ -9,14 +9,12 @@ sent in the ``Authorization`` header.
 from __future__ import annotations
 
 import json
-import os
 import re
-from collections.abc import Mapping
 from typing import Any
 
 import httpx2 as httpx
 
-from story_agent.config import ModelsConfig, get_api_key
+from story_agent.config import ModelsConfig
 from story_agent.llm import LLMError, LLMRequest, RawResponse, TransientError, Usage
 
 TRANSIENT_STATUS = {408, 409, 425, 429}
@@ -228,14 +226,6 @@ class NvidiaTransport:
         used = payload.get("usage") or {}
         usage = Usage(int(used.get("prompt_tokens", 0)), int(used.get("completion_tokens", 0)))
         return RawResponse(data, usage)
-
-
-def transport_from_env(
-    models: ModelsConfig, env: Mapping[str, str] | None = None
-) -> NvidiaTransport:
-    """Build the transport from config and the environment variable named by ``api_key_env``."""
-    source = os.environ if env is None else env
-    return NvidiaTransport(get_api_key(models.api_key_env, source), models)
 
 
 # Request fields that some reasoning models use to skip or shorten their thinking. Which one a

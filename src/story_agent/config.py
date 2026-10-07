@@ -26,21 +26,97 @@ class Price(_Cfg):
     output: float
 
 
-class ModelsConfig(_Cfg):
-    """Model names and call settings."""
+Provider = Literal["anthropic", "nvidia"]
+PROVIDERS: tuple[Provider, ...] = ("anthropic", "nvidia")
+PROVIDER_ENV = "STORY_AGENT_PROVIDER"
 
+
+class ModelsConfig(_Cfg):
+    """The models and call settings for the provider in use."""
+
+    provider: Provider
     generator: str
     judge: str
-    base_url: str = "https://integrate.api.nvidia.com/v1"
-    api_key_env: str = "NVIDIA_API_KEY"
+    api_key_env: str
+    base_url: str = ""
     structured_output: Literal["auto", "guided_json", "json_schema", "none"] = "auto"
     extra_body: dict[str, dict[str, Any]] = Field(default_factory=dict)
     temperature: float | None = None
-    max_tokens: int | None = None  # None: no per-call limit is sent
-    timeout_s: float = 60.0
+    max_tokens: int | None = None  # None: no per-call limit is sent (where the provider allows it)
+    timeout_s: float = 600.0
     max_retries: int = Field(default=3, ge=0)
     backoff_base_s: float = 1.0
     prices: dict[str, Price] = Field(default_factory=dict)
+
+
+class ProviderBlock(_Cfg):
+    """One provider's section of models.yaml. Unset call settings use the shared ones."""
+
+    api_key_env: str
+    generator: str
+    judge: str
+    base_url: str = ""
+    structured_output: Literal["auto", "guided_json", "json_schema", "none"] = "auto"
+    extra_body: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    temperature: float | None = None
+    max_tokens: int | None = None
+    timeout_s: float | None = None
+    prices: dict[str, Price] = Field(default_factory=dict)
+
+
+class ModelsFile(_Cfg):
+    """models.yaml: shared call settings and one block per provider."""
+
+    provider: Literal["auto", "anthropic", "nvidia"] = "auto"
+    timeout_s: float = 600.0
+    max_retries: int = Field(default=3, ge=0)
+    backoff_base_s: float = 1.0
+    max_tokens: int | None = None
+    providers: dict[Provider, ProviderBlock]
+
+
+def resolve_models(raw: dict[str, Any], env: Mapping[str, str] | None = None) -> ModelsConfig:
+    """Pick the provider and merge its block with the shared settings.
+
+    The provider is, in order: ``STORY_AGENT_PROVIDER`` in the environment, then ``provider`` in
+    models.yaml. ``auto`` means the first provider whose API key variable is set, and the first
+    one listed when none is, so offline work needs no key.
+    """
+    source = os.environ if env is None else env
+    try:
+        file = ModelsFile.model_validate(raw)
+    except ValueError as exc:
+        raise ConfigError(f"invalid models.yaml: {type(exc).__name__}") from exc
+    wanted = source.get(PROVIDER_ENV, "").strip().casefold() or file.provider
+    if wanted not in {"auto", *PROVIDERS}:
+        raise ConfigError(f"{PROVIDER_ENV} must be auto, anthropic or nvidia, not {wanted!r}")
+    if wanted == "auto":
+        keyed = [
+            p
+            for p in PROVIDERS
+            if p in file.providers and source.get(file.providers[p].api_key_env, "").strip()
+        ]
+        wanted = keyed[0] if keyed else next(p for p in PROVIDERS if p in file.providers)
+    if wanted not in file.providers:
+        raise ConfigError(f"models.yaml has no section for provider {wanted}")
+    block = file.providers[wanted]
+    if wanted == "nvidia" and not block.base_url:
+        raise ConfigError("models.yaml: the nvidia section needs base_url")
+    return ModelsConfig(
+        provider=wanted,
+        generator=block.generator,
+        judge=block.judge,
+        api_key_env=block.api_key_env,
+        base_url=block.base_url,
+        structured_output=block.structured_output,
+        extra_body=block.extra_body,
+        temperature=block.temperature,
+        max_tokens=block.max_tokens if block.max_tokens is not None else file.max_tokens,
+        timeout_s=block.timeout_s if block.timeout_s is not None else file.timeout_s,
+        max_retries=file.max_retries,
+        backoff_base_s=file.backoff_base_s,
+        prices=block.prices,
+    )
 
 
 class BudgetConfig(_Cfg):
@@ -144,12 +220,12 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
-def load_config(config_dir: Path | None = None) -> AppConfig:
+def load_config(config_dir: Path | None = None, env: Mapping[str, str] | None = None) -> AppConfig:
     """Load and validate every top-level config file."""
     root = config_dir or default_config_dir()
     return AppConfig(
         config_dir=root,
-        models=ModelsConfig.model_validate(load_yaml(root / "models.yaml")),
+        models=resolve_models(load_yaml(root / "models.yaml"), env),
         guardrails=GuardrailsConfig.model_validate(load_yaml(root / "guardrails.yaml")),
         memory=MemoryConfig.model_validate(load_yaml(root / "memory.yaml")),
         standards=load_yaml(root / "standards.yaml"),

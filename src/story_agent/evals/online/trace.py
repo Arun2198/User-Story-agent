@@ -139,6 +139,11 @@ def read_events(path: Path) -> list[dict[str, Any]]:
     return events
 
 
+def system_for(model: str) -> str:
+    """Return the provider name for a model id, for the ``gen_ai.system`` attribute."""
+    return "anthropic" if model.casefold().startswith("claude") else "nvidia"
+
+
 def build_trace(state: RunState, events: Sequence[Mapping[str, Any]]) -> Trace:
     """Turn a run's state and its ``call_end`` events into a trace."""
     trace_id = short_hash(state.run_id, size=32)
@@ -159,7 +164,7 @@ def build_trace(state: RunState, events: Sequence[Mapping[str, Any]]) -> Trace:
             "gen_ai.usage.output_tokens": int(usage.get("output_tokens", 0)),
         }
         if call.get("model"):
-            attrs["gen_ai.system"] = "nvidia"
+            attrs["gen_ai.system"] = system_for(str(call["model"]))
             attrs["gen_ai.request.model"] = str(call["model"])
             attrs["story_agent.prompt_id"] = str(call.get("prompt_id", ""))
             attrs["story_agent.prompt_hash"] = str(call.get("prompt_hash", ""))
