@@ -1,0 +1,14 @@
+# Model names live here only.
+# temperature: set to 0 for models that accept sampling parameters. Claude 5.x
+# models reject non-default values, so it stays null for them (see ADR 0002).
+temperature: null
+generator: claude-sonnet-5-5
+judge: claude-opus-5-5
+max_tokens: 4096
+timeout_s: 60
+max_retries: 3
+backoff_base_s: 1.0
+# USD per million tokens, used for the cost budget. Update when prices change.
+prices:
+  claude-sonnet-5-5: { input: 2.0, output: 10.0 }
+  claude-opus-5-5: { input: 4.0, output: 20.0 }

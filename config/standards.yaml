@@ -1,0 +1,19 @@
+story_template: "As a {persona}, I want {want}, so that {benefit}."
+estimate_scale: fibonacci
+estimate_values: [1, 2, 3, 5, 8, 13]
+priority_scheme: moscow
+max_criteria_per_story: 8
+acceptance_format: given_when_then
+definition_of_ready:
+  - Persona, want and benefit are all present
+  - At least one acceptance criterion
+  - Every element has provenance
+  - No unresolved must-have discovery item
+invest:
+  independent: Story can be delivered without another story where possible
+  negotiable: Describes the need, not the implementation
+  valuable: Benefit is stated and real
+  estimable: Team can size it
+  small: Fits in one iteration; split if not
+  testable: Every criterion can be checked
+epic_prefixes: {}

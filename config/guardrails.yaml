@@ -1,0 +1,11 @@
+budget:
+  max_tokens_per_run: 200000
+  max_cost_usd_per_run: 2.0
+  max_steps_per_run: 40
+limits:
+  max_scenario_chars: 8000
+  max_notes_chars: 4000
+grounding:
+  fuzzy_min_ratio: 0.92
+redaction:
+  restore_in_outputs: false

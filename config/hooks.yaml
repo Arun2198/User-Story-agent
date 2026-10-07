@@ -1,0 +1,3 @@
+# Order matters. fail_mode: closed blocks the run on error, open logs and continues.
+pre: []
+post: []

@@ -1,0 +1,129 @@
+"""Configuration loading. Secrets come from the environment, never from files."""
+
+from __future__ import annotations
+
+import os
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
+
+import yaml
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ConfigError(RuntimeError):
+    """Raised when configuration is missing or invalid."""
+
+
+class _Cfg(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class Price(_Cfg):
+    """Token prices in USD per million tokens."""
+
+    input: float
+    output: float
+
+
+class ModelsConfig(_Cfg):
+    """Model names and call settings."""
+
+    generator: str
+    judge: str
+    temperature: float | None = None
+    max_tokens: int = 4096
+    timeout_s: float = 60.0
+    max_retries: int = Field(default=3, ge=0)
+    backoff_base_s: float = 1.0
+    prices: dict[str, Price] = Field(default_factory=dict)
+
+
+class BudgetConfig(_Cfg):
+    """Per-run limits."""
+
+    max_tokens_per_run: int
+    max_cost_usd_per_run: float
+    max_steps_per_run: int
+
+
+class LimitsConfig(_Cfg):
+    """Input size limits."""
+
+    max_scenario_chars: int
+    max_notes_chars: int
+
+
+class GroundingConfig(_Cfg):
+    """Grounding verifier settings."""
+
+    fuzzy_min_ratio: float = Field(ge=0.0, le=1.0)
+
+
+class RedactionConfig(_Cfg):
+    """Redaction settings."""
+
+    restore_in_outputs: bool = False
+
+
+class GuardrailsConfig(_Cfg):
+    """Guardrail settings."""
+
+    budget: BudgetConfig
+    limits: LimitsConfig
+    grounding: GroundingConfig
+    redaction: RedactionConfig = Field(default_factory=RedactionConfig)
+
+
+class AppConfig(_Cfg):
+    """All configuration the app needs, loaded once and passed in."""
+
+    config_dir: Path
+    models: ModelsConfig
+    guardrails: GuardrailsConfig
+    standards: dict[str, Any]
+    hooks: dict[str, Any]
+    destinations: dict[str, Any]
+    evals: dict[str, Any]
+
+
+def default_config_dir(env: Mapping[str, str] | None = None) -> Path:
+    """Return the config directory from the environment or ./config."""
+    env = os.environ if env is None else env
+    return Path(env.get("STORY_AGENT_CONFIG_DIR", "config"))
+
+
+def load_yaml(path: Path) -> dict[str, Any]:
+    """Read a YAML mapping from ``path``."""
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise ConfigError(f"missing config file: {path}") from exc
+    except yaml.YAMLError as exc:
+        raise ConfigError(f"invalid YAML in {path}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ConfigError(f"{path} must contain a mapping")
+    return data
+
+
+def load_config(config_dir: Path | None = None) -> AppConfig:
+    """Load and validate every top-level config file."""
+    root = config_dir or default_config_dir()
+    return AppConfig(
+        config_dir=root,
+        models=ModelsConfig.model_validate(load_yaml(root / "models.yaml")),
+        guardrails=GuardrailsConfig.model_validate(load_yaml(root / "guardrails.yaml")),
+        standards=load_yaml(root / "standards.yaml"),
+        hooks=load_yaml(root / "hooks.yaml"),
+        destinations=load_yaml(root / "destinations.yaml"),
+        evals=load_yaml(root / "evals.yaml"),
+    )
+
+
+def get_api_key(env: Mapping[str, str] | None = None) -> str:
+    """Return the API key from the environment or raise."""
+    env = os.environ if env is None else env
+    key = env.get("ANTHROPIC_API_KEY", "")
+    if not key:
+        raise ConfigError("ANTHROPIC_API_KEY is not set")
+    return key
