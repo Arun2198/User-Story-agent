@@ -12,3 +12,4 @@ dist/
 /memory/
 .env
 *.egg-info/
+/eval-reports/
