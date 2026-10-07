@@ -99,6 +99,7 @@ class AnswerKind(StrEnum):
     OTHER = "other"
     JUDGMENT = "judgment"
     DEFERRED = "deferred"
+    NOT_APPLICABLE = "not_applicable"
     MEMORY_CONFIRMED = "memory_confirmed"
 
 
@@ -158,6 +159,13 @@ class Preferences(_Model):
     output_format: str | None = None
     estimate_scale: str | None = None
 
+    @field_validator("estimate_scale")
+    @classmethod
+    def _known_scale(cls, value: str | None) -> str | None:
+        if value is not None and value not in {"fibonacci", "tshirt", "hours"}:
+            raise ValueError("estimate_scale must be fibonacci, tshirt or hours")
+        return value
+
     @field_validator("output_format")
     @classmethod
     def _known_format(cls, value: str | None) -> str | None:
@@ -172,7 +180,7 @@ class Scenario(_Model):
     schema_version: str = SCHEMA_VERSION
     text: str
     notes: str = ""
-    workspace: str = "default"
+    workspace: str = Field(default="default", pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
 class DiscoveryItem(_Model):
@@ -184,6 +192,8 @@ class DiscoveryItem(_Model):
     status: ItemStatus
     must_have: bool = False
     provenance: list[Provenance] = Field(default_factory=list)
+    resolution: str = ""
+    resolved_by: str | None = None
 
 
 class DiscoveryMap(_Model):
@@ -192,6 +202,7 @@ class DiscoveryMap(_Model):
     schema_version: str = SCHEMA_VERSION
     domain: str
     subdomain: str | None = None
+    subpacks: list[str] = Field(default_factory=list)
     actors: list[str] = Field(default_factory=list)
     goals: list[str] = Field(default_factory=list)
     business_context: str = ""
@@ -321,6 +332,7 @@ class RunState(_Model):
     rounds: list[QuestionRound] = Field(default_factory=list)
     answers: list[Answer] = Field(default_factory=list)
     go_ahead: bool = False
+    go_ahead_by: str | None = None
     requirements: list[Requirement] = Field(default_factory=list)
     stories: list[Story] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)

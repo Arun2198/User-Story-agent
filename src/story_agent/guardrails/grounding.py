@@ -69,7 +69,9 @@ class GroundingVerifier:
         self._state = state
         self._config = config
         self._scenario = normalize(state.redacted_text or state.scenario.text)
-        self._notes = normalize(state.redacted_notes or state.scenario.notes)
+        notes = [state.redacted_notes or state.scenario.notes]
+        notes.extend(r.free_text_reply for r in state.rounds if r.free_text_reply)
+        self._notes = normalize("\n".join(notes))
         self._answers = {a.question_id: a for a in state.answers}
         self._memory_confirmed = {
             a.memory_id
@@ -101,6 +103,14 @@ class GroundingVerifier:
                 if matcher.real_quick_ratio() >= ratio and matcher.ratio() >= ratio:
                     return True
         return False
+
+    def locate(self, excerpt: str) -> ProvenanceType | None:
+        """Return which source contains ``excerpt``: the scenario, or the notes and replies."""
+        if self.excerpt_found(excerpt, self._scenario):
+            return ProvenanceType.SCENARIO_EXCERPT
+        if self.excerpt_found(excerpt, self._notes):
+            return ProvenanceType.USER_NOTES
+        return None
 
     def check_provenance(self, prov: Provenance, where: str) -> Finding | None:
         """Return a finding when ``prov`` cannot be verified."""

@@ -17,3 +17,7 @@ invest:
   small: Fits in one iteration; split if not
   testable: Every criterion can be checked
 epic_prefixes: {}
+clarification:
+  max_questions_per_round: 6
+  max_rounds: 3
+  free_text_prompt: "Anything else you want to add or change?"
