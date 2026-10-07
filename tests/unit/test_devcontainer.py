@@ -12,11 +12,11 @@ def test_the_container_installs_from_the_lockfile() -> None:
 
 
 def test_the_key_is_a_declared_secret_and_never_a_value() -> None:
-    assert "ANTHROPIC_API_KEY" in CONFIG["secrets"]
+    assert "NVIDIA_API_KEY" in CONFIG["secrets"]
     text = (ROOT / ".devcontainer" / "devcontainer.json").read_text(encoding="utf-8")
-    assert "sk-ant" not in text.replace("starts with sk-ant-", "")
+    assert "nvapi-" not in text.replace("starts with nvapi-", "")
     for section in ("containerEnv", "remoteEnv"):
-        assert "ANTHROPIC_API_KEY" not in CONFIG.get(section, {})
+        assert "NVIDIA_API_KEY" not in CONFIG.get(section, {})
 
 
 def test_the_python_version_matches_the_project() -> None:
