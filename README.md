@@ -1,4 +1,4 @@
-# story-agent
+# Story-Agent
 
 Turns a plain-language scenario into traceable user stories with acceptance
 criteria. It discovers what is missing, asks clarification questions, remembers
