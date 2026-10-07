@@ -189,16 +189,42 @@ Because this is a command line tool, "online" means running it on a machine that
 laptop, or letting someone else use it. There is **no built-in web app or multi-user service**.
 These are the options that work today, from simplest to most involved.
 
-### Option A. A cloud development environment (for example GitHub Codespaces)
+### Option A. GitHub Codespaces (set up for you)
 
-Good for trying it without installing anything.
+The repository includes `.devcontainer/devcontainer.json`, so a codespace installs everything
+by itself. Good for trying it without installing anything.
 
-1. On the repository page, choose **Code, Codespaces, Create codespace**.
-2. In the Codespaces settings, add a secret named `ANTHROPIC_API_KEY`.
-3. In the terminal that opens: `pip install uv && uv sync`.
-4. Use it exactly as in Part 1. The terminal is a real terminal, so prompts work.
+1. **Add your key once, as a Codespaces secret.** On GitHub: your profile picture, Settings,
+   Codespaces, Secrets, New secret. Name it `ANTHROPIC_API_KEY`, paste the key, and under
+   "Repository access" select `User-Story-agent`. The key is then in the environment of every
+   codespace for that repository. Never paste it into a terminal history or a file.
+2. **Create the codespace.** On the repository page choose Code, Codespaces, Create codespace on
+   the branch you want (for example `claude/story-agent-v2-plan-f7jhxq`, or `main` once merged).
+3. **Wait for it to finish.** The first start takes a few minutes while it runs
+   `pip install uv && uv sync --locked`. The terminal shows when it is done.
+4. **Check it.** In the terminal:
+   ```bash
+   echo "${ANTHROPIC_API_KEY:+key is set}"      # prints "key is set" (and never the key)
+   uv run story-agent --help
+   uv run pytest -q                              # optional, a few minutes
+   ```
+5. **Run it.** Use it exactly as in Part 1, from step 5. The terminal is a real terminal, so the
+   questions and review prompts work.
 
-Delete the codespace when you finish. Its disk holds your runs and memory.
+Things to know:
+
+- **Cost and data.** The codespace is on GitHub's servers. Its disk holds `runs/` and `memory/`,
+  including scenarios as typed. Use a private repository, and do not use real customer data until
+  you are happy with that.
+- **Stopping.** An idle codespace stops after a while and keeps its files. Delete it when you
+  are done (github.com/codespaces), which also deletes `runs/` and `memory/`.
+- **Keep your work.** Copy anything you want to keep out of `runs/` before deleting. Do not
+  commit `runs/`, `memory/` or `.env` (they are ignored by git).
+- **Other keys.** Add other secrets the same way, with the name the config expects.
+- **Free allowance.** GitHub gives a monthly allowance of codespace hours. Check your plan.
+- **Not tested by me.** I checked the install steps on a clean copy of the repository, but I
+  could not start a real codespace from here. If the first start fails, open the creation log
+  (Command Palette, "Codespaces: View Creation Log") and send me the last lines.
 
 ### Option B. A server or virtual machine you control
 
