@@ -17,3 +17,27 @@ thresholds:
     subdomain_accuracy: { min: 0.85 }
     subpack_precision: { min: 0.9 }
     subpack_recall: { min: 0.9 }
+  memory_retrieval:
+    precision: { min: 0.9 }
+    recall: { min: 0.9 }
+  memory_staleness:
+    stale_flag_accuracy: { min: 1.0 }
+    answer_kind_accuracy: { min: 1.0 }
+    stale_misapplication_rate: { max: 0.0, hard: true }
+  memory_contradiction:
+    accuracy: { min: 0.95 }
+    missed_conflict_rate: { max: 0.05 }
+    false_conflict_rate: { max: 0.05 }
+  memory_safety:
+    unsafe_rejection_rate: { min: 1.0 }
+    false_rejection_rate: { max: 0.05 }
+    code_match_rate: { min: 0.9 }
+    pii_persisted: { max: 0, hard: true }
+  memory_isolation:
+    cross_workspace_leaks: { max: 0, hard: true }
+    mismatch_block_rate: { min: 1.0, hard: true }
+    traversal_block_rate: { min: 1.0, hard: true }
+  memory_effect:
+    default_coverage: { min: 1.0 }
+    stale_default_flag_rate: { min: 1.0 }
+    spurious_defaults: { max: 0 }

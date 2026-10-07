@@ -1,0 +1,12 @@
+{"id": "mstl-001", "split": "dev", "age_days": 400, "ttl_days": 30, "reply": "yes", "expect_stale": true, "expect_kind": "memory_confirmed"}
+{"id": "mstl-002", "split": "holdout", "age_days": 400, "ttl_days": 30, "reply": "no", "expect_stale": true, "expect_kind": null}
+{"id": "mstl-003", "split": "dev", "age_days": 400, "ttl_days": 30, "reply": null, "expect_stale": true, "expect_kind": null}
+{"id": "mstl-004", "split": "holdout", "age_days": 400, "ttl_days": 30, "reply": "A different value", "expect_stale": true, "expect_kind": "other"}
+{"id": "mstl-005", "split": "dev", "age_days": 5, "ttl_days": 30, "reply": "yes", "expect_stale": false, "expect_kind": "memory_confirmed"}
+{"id": "mstl-006", "split": "holdout", "age_days": 5, "ttl_days": 30, "reply": "no", "expect_stale": false, "expect_kind": null}
+{"id": "mstl-007", "split": "dev", "age_days": 5, "ttl_days": 30, "reply": null, "expect_stale": false, "expect_kind": null}
+{"id": "mstl-008", "split": "holdout", "age_days": 5, "ttl_days": 30, "reply": "A different value", "expect_stale": false, "expect_kind": "other"}
+{"id": "mstl-009", "split": "dev", "age_days": 31, "ttl_days": 30, "reply": "yes", "expect_stale": true, "expect_kind": "memory_confirmed"}
+{"id": "mstl-010", "split": "holdout", "age_days": 30, "ttl_days": 30, "reply": "yes", "expect_stale": false, "expect_kind": "memory_confirmed"}
+{"id": "mstl-011", "split": "dev", "age_days": 200, "ttl_days": 365, "reply": null, "expect_stale": false, "expect_kind": null}
+{"id": "mstl-012", "split": "holdout", "age_days": 366, "ttl_days": 365, "reply": "A different value", "expect_stale": true, "expect_kind": "other"}

@@ -31,7 +31,7 @@ def ratio(numerator: float, denominator: float, empty: float = 1.0) -> float:
 
 
 def check_thresholds(
-    metrics: dict[str, float], spec: dict[str, dict[str, float]], prefix: str = ""
+    metrics: dict[str, float], spec: dict[str, dict[str, Any]], prefix: str = ""
 ) -> list[str]:
     """Return one failure message per metric outside its min or max."""
     failures: list[str] = []
@@ -77,4 +77,28 @@ def run_by_split(
         thresholds_met=not failures,
         failures=failures,
         details={"missed_case_ids": misses},
+    )
+
+
+def finalize(
+    name: str,
+    metrics: dict[str, float],
+    evals_config: dict[str, Any],
+    details: dict[str, Any] | None = None,
+) -> EvalReport:
+    """Build a report for an eval without splits. Metrics marked ``hard`` are listed apart."""
+    spec = evals_config.get("thresholds", {}).get(name, {})
+    failures = check_thresholds(metrics, spec)
+    hard = [
+        f for f in failures if any(f.startswith(f"{m}=") and b.get("hard") for m, b in spec.items())
+    ]
+    out_details = dict(details or {})
+    out_details["hard_failures"] = hard
+    return EvalReport(
+        name=name,
+        kind="component",
+        metrics=metrics,
+        thresholds_met=not failures,
+        failures=failures,
+        details=out_details,
     )

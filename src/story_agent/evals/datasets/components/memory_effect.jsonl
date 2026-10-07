@@ -1,0 +1,6 @@
+{"id": "meff-001", "split": "dev", "name": "cards", "subdomain": "cards", "subpacks": [], "stored": ["dispute_handling", "limits_velocity", "fees_charges"], "stale": []}
+{"id": "meff-002", "split": "holdout", "name": "payments", "subdomain": "payments_transfers", "subpacks": [], "stored": ["limits_velocity", "cutoff_settlement", "idempotency", "fraud_risk_checks"], "stale": ["cutoff_settlement"]}
+{"id": "meff-003", "split": "dev", "name": "lending", "subdomain": "lending", "subpacks": [], "stored": ["credit_decisioning", "kyc_cdd"], "stale": []}
+{"id": "meff-004", "split": "holdout", "name": "kyc", "subdomain": "onboarding_kyc", "subpacks": [], "stored": ["kyc_cdd", "aml_sanctions", "limits_velocity", "data_privacy"], "stale": ["data_privacy"]}
+{"id": "meff-005", "split": "dev", "name": "none stored", "subdomain": "payments_transfers", "subpacks": [], "stored": [], "stale": []}
+{"id": "meff-006", "split": "holdout", "name": "india payments", "subdomain": "payments_transfers", "subpacks": ["india_rails"], "stored": ["upi_rules", "neft_rtgs_imps_rules"], "stale": []}
