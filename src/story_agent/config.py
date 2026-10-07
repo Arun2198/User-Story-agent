@@ -84,12 +84,37 @@ class GuardrailsConfig(_Cfg):
     redaction: RedactionConfig = Field(default_factory=RedactionConfig)
 
 
+class RecallConfig(_Cfg):
+    """Memory recall settings."""
+
+    max_entries: int = Field(default=12, ge=1)
+    min_matched_terms: int = Field(default=2, ge=1)
+    max_query_terms: int = Field(default=30, ge=1)
+
+
+class WriteConfig(_Cfg):
+    """Memory write settings."""
+
+    max_content_chars: int = Field(default=300, ge=1)
+    max_scenario_overlap_chars: int = Field(default=60, ge=10)
+
+
+class MemoryConfig(_Cfg):
+    """Memory settings."""
+
+    recall: RecallConfig = Field(default_factory=RecallConfig)
+    write: WriteConfig = Field(default_factory=WriteConfig)
+    ttl_days: dict[str, int] = Field(default_factory=dict)
+    nfr_categories: list[str] = Field(default_factory=list)
+
+
 class AppConfig(_Cfg):
     """All configuration the app needs, loaded once and passed in."""
 
     config_dir: Path
     models: ModelsConfig
     guardrails: GuardrailsConfig
+    memory: MemoryConfig
     standards: dict[str, Any]
     hooks: dict[str, Any]
     destinations: dict[str, Any]
@@ -122,6 +147,7 @@ def load_config(config_dir: Path | None = None) -> AppConfig:
         config_dir=root,
         models=ModelsConfig.model_validate(load_yaml(root / "models.yaml")),
         guardrails=GuardrailsConfig.model_validate(load_yaml(root / "guardrails.yaml")),
+        memory=MemoryConfig.model_validate(load_yaml(root / "memory.yaml")),
         standards=load_yaml(root / "standards.yaml"),
         hooks=load_yaml(root / "hooks.yaml"),
         destinations=load_yaml(root / "destinations.yaml"),

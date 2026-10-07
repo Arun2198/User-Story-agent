@@ -331,6 +331,8 @@ class RunState(_Model):
     discovery: DiscoveryMap | None = None
     rounds: list[QuestionRound] = Field(default_factory=list)
     answers: list[Answer] = Field(default_factory=list)
+    conflict_resolutions: dict[str, str] = Field(default_factory=dict)
+    memory_rejected: list[str] = Field(default_factory=list)
     go_ahead: bool = False
     go_ahead_by: str | None = None
     requirements: list[Requirement] = Field(default_factory=list)

@@ -1,0 +1,22 @@
+# Memory settings. Entries are scoped by workspace (one database file per workspace).
+recall:
+  max_entries: 12
+  min_matched_terms: 2    # distinct scenario keywords an entry must share to be recalled by text
+  max_query_terms: 30
+write:
+  max_content_chars: 300
+  max_scenario_overlap_chars: 60   # reject content that copies this much of the scenario
+ttl_days:
+  confirmed_answer: 180
+  decision: 365
+  glossary: 365
+  nfr_default: 365
+  preference: 365
+# Answers in these categories are saved as nfr_default instead of confirmed_answer.
+nfr_categories:
+  - performance_availability
+  - audit
+  - audit_retention
+  - business_continuity
+  - sla_escalation
+  - limits_velocity

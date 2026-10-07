@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 
 from story_agent.schema import DiscoveryItem, ItemStatus
@@ -44,3 +45,13 @@ def canonical_items(
         counts[item.category] = counts.get(item.category, 0) + 1
         result.append(item.model_copy(update={"id": item_id(item.category, counts[item.category])}))
     return result
+
+
+def memory_id(entry_type: str, domain: str, subdomain: str | None, key_tag: str) -> str:
+    """Return a stable id for a memory entry from what it is about, not from its text.
+
+    The same kind of fact in the same domain always gets the same id, so a changed
+    answer updates the entry instead of adding a second one.
+    """
+    raw = "|".join([entry_type, domain, subdomain or "", key_tag])
+    return "M-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:10]
