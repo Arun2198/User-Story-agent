@@ -26,9 +26,9 @@ phase shown), **manual** (a review step).
 | bandit, pip-audit, gitleaks | CI `security`; pre-commit (gitleaks) | enforced |
 | License check, CycloneDX SBOM | CI `supply-chain` | enforced |
 | Conventional Commits | pre-commit `commit-msg` hook | enforced locally |
-| Threat model (OWASP LLM Top 10, MITRE ATLAS) | `docs/threat-model.md` | planned (phase 8) |
-| Risk register (aligned with NIST AI RMF) | `docs/risk-register.md` | planned (phase 8) |
-| Model card, prompt change log | `docs/model-card.md`, `prompts/CHANGELOG.md` | planned (phase 8) |
+| Threat model (OWASP LLM Top 10, MITRE ATLAS) | `docs/threat-model.md` | enforced (paths checked by `tests/unit/test_docs.py`) |
+| Risk register (aligned with NIST AI RMF) | `docs/risk-register.md` | enforced (paths checked by `tests/unit/test_docs.py`) |
+| Model card, prompt change log | `docs/model-card.md`, `prompts/CHANGELOG.md` | enforced (versions checked by `tests/unit/test_docs.py`) |
 | Memory TTL, deletion, no PII, workspace isolation | `memory/` (`guard.py`, `store.py`), `config/memory.yaml`, memory CLI, `evals/components/memory.py` (hard-fail metrics `pii_persisted`, `cross_workspace_leaks`, `stale_misapplication_rate`) | enforced |
 | Guardrails fail closed, observers fail open | `config/hooks.yaml`, `hooks/registry.py`, `tests/unit/hooks/test_hooks.py` | enforced |
 | Component evals gate regressions | `config/evals.yaml`, `evals/components/`, `tests/unit/evals/` (redaction, injection, scope guard) | enforced |
@@ -38,6 +38,7 @@ phase shown), **manual** (a review step).
 | Publishers: payload snapshot tests per destination | `tests/unit/publish/`, `tests/unit/publish/snapshots/` | enforced |
 | Human approval before any external write, bound to the exact payload | `publish/base.py` (`Approval`, `apply_plan`), `tests/unit/publish/test_publishers.py` | enforced |
 | Published output is grounded and free of PII | `publish/safety.py`, `tests/unit/publish/` | enforced |
+| Online evaluation off by default; traces hold no content | `evals/online/`, `config/evals.yaml` (`online`), `tests/unit/evals/online/` | enforced |
 | Skill matches the agent's limits and files | `skill/scenario-to-stories/SKILL.md`, `tests/unit/test_skill.py` | enforced |
 | Runs can pause and resume from a private checkpoint | `session.py`, `runs/<id>/checkpoint.sqlite` (0600), `tests/unit/test_graph.py` | enforced |
 | Every story grounded and traceable | `guardrails/grounding.py`, `pipeline/requirements.py`, `pipeline/numbers.py`, `GroundingHook`, `tests/unit/pipeline/` | enforced |

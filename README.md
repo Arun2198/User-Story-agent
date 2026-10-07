@@ -100,6 +100,23 @@ Tokens are never stored there; they come from the environment variables it names
   confirm at a terminal. The approval is for that payload only (it carries its hash), and there
   is no flag that skips it. Without a terminal, use `--dry-run`.
 
+## Online evaluation
+
+Off by default (`online` in `config/evals.yaml`). It records how finished runs go without
+changing them.
+
+```bash
+story-agent online trace run-20261007-101500-3fa2 --otlp   # OpenTelemetry-compatible trace
+story-agent online feedback run-20261007-101500-3fa2       # approve/edit/reject, edit distance, ...
+story-agent online drift                                   # compare recorded runs with a baseline
+```
+
+To record runs locally, set `online.enabled: true` and `online.sink: jsonl`; records go to
+`runs/online/records.jsonl` (private). Traces hold ids, hashes, counts and numbers only. The
+`otlp_http`, `langfuse` and `warehouse` sinks are stubs that are **pending my input**: choosing
+one stops at start-up and says what is needed. Drift compares with the live baseline, so run
+`story-agent evals run --live --update-baseline` once first.
+
 ## Skill
 
 `skill/scenario-to-stories/SKILL.md` is the same workflow for use without code. It points at

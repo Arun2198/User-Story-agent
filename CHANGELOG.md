@@ -7,6 +7,10 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
+- Online evaluation (off by default): `OnlineEvaluator` interface, OpenTelemetry-compatible trace schema with OTLP/JSON export, feedback signals, sampled judge scoring, drift check against a baseline, a local JSONL sink and pending stubs for OTLP, Langfuse and a warehouse.
+- `story-agent online trace|feedback|drift`.
+- Run state keeps `memory_outcome`; stage usage records `latency_s`.
+- `docs/threat-model.md`, `docs/risk-register.md`, `docs/model-card.md`, ADR 0011.
 - Publishers: markdown, JSON and Azure DevOps CSV import files; request plans with field mapping and `--dry-run` for Azure DevOps and Jira REST; `story-agent publish`; `--format` and `--out` on `run`.
 - Approval gate for external writes, bound to the exact payload, and idempotency labels for re-runs.
 - Publish checks: no unreviewed stories, grounding re-checked, no PII or redacted values in output, spreadsheet formula neutralising.
