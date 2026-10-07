@@ -114,3 +114,29 @@ thresholds:
     question_set_jaccard: { min: 0.7 }
     story_set_jaccard: { min: 0.7 }
     failed_runs: { max: 0 }
+
+# Online evaluation. Off by default. "jsonl" writes records under runs/ and needs no setup.
+# otlp_http, langfuse and warehouse are stubs that wait for details (see docs/adr/0011).
+online:
+  enabled: false
+  sink: none              # none | jsonl | otlp_http | langfuse | warehouse
+  trace_sample_rate: 1.0
+  path: online/records.jsonl
+  judge:
+    enabled: false        # needs a live key; scores a sample with the judge model
+    sample_rate: 0.1
+  drift:
+    baseline_mode: live   # offline baselines come from a scripted model, so compare with live
+    baseline_name: app
+    min_runs: 20
+    tolerances:
+      questions_asked: { rel: 0.25 }
+      rounds_to_readiness: { abs: 0.5 }
+      other_answer_rate: { abs: 0.15 }
+      forced_resolution_rate: { abs: 0.1 }
+      revision_loops: { abs: 0.5 }
+      cost_usd: { rel: 0.5 }
+      tokens: { rel: 0.5 }
+      judge_groundedness: { abs: 0.1 }
+      judge_completeness: { abs: 0.1 }
+      judge_testability: { abs: 0.1 }

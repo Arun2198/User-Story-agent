@@ -11,6 +11,8 @@ from story_agent.cache import SqliteCache
 from story_agent.config import AppConfig, ConfigError, default_config_dir, get_api_key, load_config
 from story_agent.deps import StageDeps
 from story_agent.discovery.packs import load_packs
+from story_agent.evals.app.judge import judge_run
+from story_agent.evals.online import build_online_evaluator
 from story_agent.graph import Runtime
 from story_agent.hooks import build_pipeline, default_registry
 from story_agent.interactive import PromptResponder
@@ -97,7 +99,10 @@ def build_runtime(
     prompts_dir = (config_dir or default_config_dir()).parent / "prompts"
     deps = StageDeps(client, config, packs, prompts_dir)
     pipeline = build_pipeline(config.hooks, default_registry())
-    runtime = Runtime(deps, pipeline, runs_dir, memory_dir if use_memory else None)
+    online = build_online_evaluator(
+        config.evals, runs_dir, lambda state: judge_run(client, config, prompts_dir, state)
+    )
+    runtime = Runtime(deps, pipeline, runs_dir, memory_dir if use_memory else None, online)
     runtime.on_close.append(cache.close)
     return runtime
 

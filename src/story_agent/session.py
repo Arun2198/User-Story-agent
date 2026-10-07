@@ -20,6 +20,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
 from story_agent.graph import CompiledRunGraph, GraphState, RunGraph, Runtime, initial_state
+from story_agent.logging import log_event
 from story_agent.schema import RunState, Scenario
 
 MAX_PAUSES = 200  # a safety stop for a responder that keeps giving bad replies
@@ -113,12 +114,23 @@ class Session:
         for _ in range(MAX_PAUSES):
             pending = _pending(graph, config)
             if pending is None:
-                return self._outcome(graph, run_id, config, None)
+                outcome = self._outcome(graph, run_id, config, None)
+                self._observe(outcome)
+                return outcome
             reply = responder.respond(pending)
             if reply is None:
                 return self._outcome(graph, run_id, config, pending)
             graph.invoke(Command(resume=reply), config)
         raise SessionError("too many pauses; the responder keeps sending replies that are refused")
+
+    def _observe(self, outcome: RunOutcome) -> None:
+        """Tell the online evaluator a run finished. An observer never fails the run."""
+        if outcome.status != "done" or outcome.state is None:
+            return
+        try:
+            self.rt.online.on_run_finished(outcome.state, self.rt.runs_dir)
+        except Exception as exc:
+            log_event(outcome.run_id, "publish", "online_eval_failed", error=type(exc).__name__)
 
     @staticmethod
     def _outcome(

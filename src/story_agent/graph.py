@@ -28,6 +28,7 @@ from story_agent.clarify.answers import resolve_answer_keys
 from story_agent.clarify.limits import ClarifyLimits
 from story_agent.clarify.readiness import GateError
 from story_agent.deps import StageDeps
+from story_agent.evals.online.evaluator import NullEvaluator, OnlineEvaluator
 from story_agent.flow import Flow, ScopeRefusalError
 from story_agent.hooks import HookBlocked
 from story_agent.hooks.registry import HookPipeline
@@ -62,6 +63,7 @@ class Runtime:
     pipeline: HookPipeline
     runs_dir: Path
     memory_dir: Path | None = None
+    online: OnlineEvaluator = field(default_factory=NullEvaluator)
     on_close: list[Callable[[], None]] = field(default_factory=list)
     _stores: dict[str, SqliteMemoryStore] = field(default_factory=dict)
 
