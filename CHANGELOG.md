@@ -7,6 +7,9 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
+- Memory: workspace-scoped SQLite store with FTS5, write guard, deterministic recall, conflict detection, write proposals with per-entry approval, and `story-agent memory` commands.
+- Memory evals: retrieval, staleness, contradiction handling, safety, isolation and effect, with hard-fail metrics.
+- `memory_proposal` post-hook.
 - Domain packs: generic and banking (with an optional India rails sub-pack), loader and validator, deterministic domain detection.
 - `discover` stage and prompt: checklist coverage, grounded `stated` items, canonical ids.
 - `clarify` stage and prompt: ranked questions, rounds, answers, free text and whitelisted preferences, readiness summary and go-ahead gate.

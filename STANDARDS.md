@@ -29,7 +29,7 @@ phase shown), **manual** (a review step).
 | Threat model (OWASP LLM Top 10, MITRE ATLAS) | `docs/threat-model.md` | planned (phase 8) |
 | Risk register (aligned with NIST AI RMF) | `docs/risk-register.md` | planned (phase 8) |
 | Model card, prompt change log | `docs/model-card.md`, `prompts/CHANGELOG.md` | planned (phase 8) |
-| Memory TTL, deletion, no PII, workspace isolation | `memory/` and its tests and evals | planned (phase 3) |
+| Memory TTL, deletion, no PII, workspace isolation | `memory/` (`guard.py`, `store.py`), `config/memory.yaml`, memory CLI, `evals/components/memory.py` (hard-fail metrics `pii_persisted`, `cross_workspace_leaks`, `stale_misapplication_rate`) | enforced |
 | Guardrails fail closed, observers fail open | `config/hooks.yaml`, `hooks/registry.py`, `tests/unit/hooks/test_hooks.py` | enforced |
 | Component evals gate regressions | `config/evals.yaml`, `evals/components/`, `tests/unit/evals/` (redaction, injection, scope guard) | enforced |
 | Packs are data; pack validation | `discovery/packs.py`, `tests/unit/discovery/test_packs.py` | enforced |

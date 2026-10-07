@@ -5,7 +5,7 @@ criteria. It discovers what is missing, asks clarification questions, remembers
 confirmed answers per workspace, and works for any industry through YAML domain
 packs. Banking is the first pack.
 
-Status: phase 2 (domain packs, discover and clarify). The remaining
+Status: phase 3 (memory). The remaining
 stages arrive in later phases; see `STANDARDS.md` for what is enforced.
 
 ## Setup
@@ -59,3 +59,28 @@ A pack is one YAML file in `config/domains/`. No code changes.
 Implement `story_agent.intake.ingestor.Ingestor` (`ingest(source, notes=..., workspace=...)`
 returning a `Scenario`). Only plain text (`TextIngestor`) is built. Ingested text goes
 through the same redaction and injection hooks as typed text.
+
+## Memory
+
+Memory makes repeat scenarios sharper: when a similar scenario comes up, remembered answers
+appear as defaults ("Previously you said X ... still valid? yes / edit / no"). You are still
+asked, and nothing is saved without your approval.
+
+- Storage is `memory/<workspace>.db` (SQLite with FTS5), one file per workspace. Pass
+  `--workspace` (default `default`). Set the directory with `--memory-dir` or
+  `STORY_AGENT_MEMORY_DIR`.
+- Entries are `confirmed_answer`, `decision`, `glossary`, `nfr_default` or `preference`.
+  PII, secrets, instruction-like text and copied scenario text are refused on write.
+- Entries past `ttl_days` are marked stale and need re-confirming. Settings are in
+  `config/memory.yaml`.
+
+```bash
+story-agent memory list --workspace acme
+story-agent memory show M-1a2b3c4d5e --workspace acme
+story-agent memory edit M-1a2b3c4d5e --content "Retain 7 years" --workspace acme
+story-agent memory delete M-1a2b3c4d5e --workspace acme
+story-agent memory export --workspace acme --out acme-memory.json
+story-agent memory clear --workspace acme
+```
+
+The CLI reads `config/` from the current directory, or from `STORY_AGENT_CONFIG_DIR`.
