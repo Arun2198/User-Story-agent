@@ -16,7 +16,7 @@ lint and type checks enforced in CI.
 - ruff for lint and format, `mypy --strict` with the Pydantic plugin, pytest with
   coverage, Hypothesis for property tests.
 - Config templates use the standard library, with `html.escape` for HTML output.
-- HTTP uses `httpx2`, the client the Anthropic SDK 1.x already depends on.
+- HTTP uses `httpx2`. It is used by the model transport (`nvidia.py`).
 
 ## Consequences
 

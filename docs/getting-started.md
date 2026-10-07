@@ -21,7 +21,7 @@ no login. One person uses it at a time. It needs the internet only to reach the 
 | Python 3.11 or newer | `python3 --version` | python.org |
 | git | `git --version` | git-scm.com |
 | uv (installs everything else) | `uv --version` | `pip install uv` or docs.astral.sh/uv |
-| An Anthropic API key | | console.anthropic.com |
+| An NVIDIA API key (starts with `nvapi-`) | | build.nvidia.com, sign in, then Get API Key |
 
 The key is only needed to run real scenarios. The test suite and the offline evals work without
 one.
@@ -46,16 +46,40 @@ uv run story-agent --help # lists run, resume, publish, memory, evals, online
 
 ### 4. Set your key
 
-The tool reads the key from an environment variable. It does **not** read the `.env` file by
-itself, so set it in your terminal:
+Create a key at build.nvidia.com (sign in, then Get API Key). One key works for every model.
+The tool reads it from the environment variable `NVIDIA_API_KEY`. It does **not** read the `.env`
+file by itself, so set it in your terminal:
 
 ```bash
-export ANTHROPIC_API_KEY="your-key-here"     # macOS and Linux
-# PowerShell: $env:ANTHROPIC_API_KEY="your-key-here"
+export NVIDIA_API_KEY="nvapi-..."            # macOS and Linux
+# PowerShell: $env:NVIDIA_API_KEY="nvapi-..."
 ```
 
-The setting lasts for that terminal window. Never put the key in a file you commit. If you use a
-tool that loads `.env` for you, keep `.env` out of git (it is already ignored).
+The setting lasts for that terminal window. Where the key goes, by setup:
+
+| Where you run it | Where to put the key |
+|---|---|
+| Your computer | `export NVIDIA_API_KEY=...` in the terminal (or your shell profile) |
+| GitHub Codespaces | Settings, Codespaces, Secrets, `NVIDIA_API_KEY` (Part 2, Option A) |
+| A server | The environment of the account that runs it |
+| GitHub Actions | Repository Settings, Secrets, `NVIDIA_API_KEY` |
+
+Never put the key in a file you commit, a chat or a screenshot. If a key is exposed, revoke it
+in the NVIDIA console and make a new one. To use another variable name, change `api_key_env` in
+`config/models.yaml`.
+
+**Check the two model ids once.** `config/models.yaml` names a generator and a judge. They were
+chosen without access to the live catalog, so confirm they exist for your account:
+
+```bash
+curl -s https://integrate.api.nvidia.com/v1/models -H "Authorization: Bearer $NVIDIA_API_KEY" \
+  | python3 -c "import sys,json; print('\n'.join(sorted(m['id'] for m in json.load(sys.stdin)['data'])))" \
+  | grep -i -E "llama-3.3|nemotron"
+```
+
+If an id is missing, copy a listed one into `generator` or `judge` in `config/models.yaml`. A
+wrong id shows up as `API error 404: model ... was not found`. If the answer is
+`the key was rejected`, the key is wrong, expired or has no access.
 
 ### 5. Your first run
 
@@ -174,7 +198,7 @@ plumbing work, not how good the real model's stories are. Only `--live` tests th
 
 | You see | Likely cause and fix |
 |---|---|
-| `ANTHROPIC_API_KEY is not set` | Run the `export` line again in this terminal |
+| `NVIDIA_API_KEY is not set` | Run the `export` line again in this terminal |
 | `There is no terminal to ask you questions` | You are not in an interactive terminal. Use `--answers FILE` |
 | `no such file ... config` or missing prompts | Run from the repository folder, or set `STORY_AGENT_CONFIG_DIR` |
 | `Paused: ...` and a `resume` hint | The run is saved. Fix what it names and run `resume` |
@@ -195,7 +219,7 @@ The repository includes `.devcontainer/devcontainer.json`, so a codespace instal
 by itself. Good for trying it without installing anything.
 
 1. **Add your key once, as a Codespaces secret.** On GitHub: your profile picture, Settings,
-   Codespaces, Secrets, New secret. Name it `ANTHROPIC_API_KEY`, paste the key, and under
+   Codespaces, Secrets, New secret. Name it `NVIDIA_API_KEY`, paste the key, and under
    "Repository access" select `User-Story-agent`. The key is then in the environment of every
    codespace for that repository. Never paste it into a terminal history or a file.
 2. **Create the codespace.** On the repository page choose Code, Codespaces, Create codespace on
@@ -204,7 +228,7 @@ by itself. Good for trying it without installing anything.
    `pip install uv && uv sync --locked`. The terminal shows when it is done.
 4. **Check it.** In the terminal:
    ```bash
-   echo "${ANTHROPIC_API_KEY:+key is set}"      # prints "key is set" (and never the key)
+   echo "${NVIDIA_API_KEY:+key is set}"      # prints "key is set" (and never the key)
    uv run story-agent --help
    uv run pytest -q                              # optional, a few minutes
    ```
@@ -229,7 +253,7 @@ Things to know:
 ### Option B. A server or virtual machine you control
 
 1. Install Python 3.11+, git and uv on the machine, clone the repository and run `uv sync`.
-2. Set `ANTHROPIC_API_KEY` in the environment of the account that runs it (a service
+2. Set `NVIDIA_API_KEY` in the environment of the account that runs it (a service
    manager's environment file, or your shell profile). Do not put it in the repository.
 3. Connect with SSH and run `uv run story-agent run ...`. Use `tmux` or `screen` so a dropped
    connection does not lose your session. A paused run can always be continued with `resume`.
@@ -243,7 +267,7 @@ Use an answers file, because there is no keyboard.
 - run: uv sync --locked
 - run: uv run story-agent run "$SCENARIO" --answers answers.yaml --format md --out stories.md
   env:
-    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
 ```
 
 Be careful. The scenario goes into the workflow logs and the run folder, and anything you upload
@@ -252,7 +276,7 @@ because `review: approve_all` means no one has read it.
 
 ### Option D. Use the skill, with no code
 
-`skill/scenario-to-stories/SKILL.md` is the same workflow for an AI assistant that supports
+`skill/scenario-to-stories/SKILL.md` is the same workflow for an assistant that supports
 skills. Give the assistant that folder and describe your scenario to it. It follows the same
 rules and reads the same prompts and checklists. It has no saved runs, no checkpoints and no
 automatic checks, so use the tool when you need repeatable results.

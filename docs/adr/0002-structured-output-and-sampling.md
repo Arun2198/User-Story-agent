@@ -1,6 +1,6 @@
 # 0002. Structured output without forced tool choice; temperature from config
 
-- Status: accepted
+- Status: superseded by [0012](0012-nvidia-transport.md)
 - Date: 2026-10-07
 
 ## Context

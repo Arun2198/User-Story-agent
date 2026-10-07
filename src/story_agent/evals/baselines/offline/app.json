@@ -2,7 +2,7 @@
   "name": "app",
   "metrics": {
     "ac_testability": 1.0,
-    "cost_usd": 0.1061,
+    "cost_usd": 0.0143,
     "discovery_recall": 1.0,
     "duplicate_rate": 0.0,
     "forced_resolution_rate": 0.0,

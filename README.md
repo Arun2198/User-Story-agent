@@ -14,7 +14,7 @@ New here? Read [docs/getting-started.md](docs/getting-started.md) first. To try 
 
 ```bash
 uv sync
-cp .env.example .env   # then set ANTHROPIC_API_KEY in your shell
+cp .env.example .env   # then export NVIDIA_API_KEY in your shell (see docs/getting-started.md)
 uv run pytest
 ```
 
@@ -132,11 +132,11 @@ Secrets come from environment variables, never from files.
 
 ## Determinism
 
-Determinism is best-effort. The Claude 5.x models do not accept a temperature
-setting (see `docs/adr/0002-structured-output-and-sampling.md`), so repeatability
+Determinism is best-effort. Calls use temperature 0 (`config/models.yaml`), but a hosted
+model can still vary between calls (see `docs/adr/0012-nvidia-transport.md`). Repeatability
 comes from the response cache, deterministic IDs and ordering, and checklist-driven
-discovery. A stability test (N repeated runs) will report variance in discovered
-items, questions asked and stories produced.
+discovery. A stability test (N repeated runs) reports variance in discovered items, questions
+asked and stories produced.
 
 ## Development
 
@@ -212,7 +212,7 @@ The CLI reads `config/` from the current directory, or from `STORY_AGENT_CONFIG_
 story-agent evals run                      # everything, offline
 story-agent evals run --component redaction
 story-agent evals run --app --cases bk-card-dispute
-story-agent evals run --stability 5 --live # needs ANTHROPIC_API_KEY
+story-agent evals run --stability 5 --live # needs NVIDIA_API_KEY
 story-agent evals add-case my-case.json    # validates, then stores the case
 story-agent evals run --update-baseline    # after an intended change
 ```

@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- The model provider is now NVIDIA's hosted API through `NvidiaTransport`. The Anthropic transport, SDK dependency and key variable are removed. The key is `NVIDIA_API_KEY`; models, base URL and structured-output mode are in `config/models.yaml` (ADR 0012).
+
 ### Added
 - Online evaluation (off by default): `OnlineEvaluator` interface, OpenTelemetry-compatible trace schema with OTLP/JSON export, feedback signals, sampled judge scoring, drift check against a baseline, a local JSONL sink and pending stubs for OTLP, Langfuse and a warehouse.
 - `story-agent online trace|feedback|drift`.

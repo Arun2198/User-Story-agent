@@ -11,13 +11,16 @@ Model names live in `config/models.yaml` only. At the time of writing:
 
 | Role | Config key | Value |
 |---|---|---|
-| Generator (every pipeline call) | `generator` | `claude-sonnet-5-5` |
-| Judge (evals and sampled online scoring) | `judge` | `claude-opus-5-5` |
+| Generator (every pipeline call) | `generator` | `meta/llama-3.3-70b-instruct` |
+| Judge (evals and sampled online scoring) | `judge` | `nvidia/llama-3.3-nemotron-super-49b-v1` |
 
-The judge is a different model from the generator on purpose. These models do not accept a
-non-default temperature, so `temperature` is `null` in config (ADR 0002). Output is not
-guaranteed identical between runs. A response cache, canonical ordering and ids set by code
-carry most of the repeatability, and a stability eval measures the rest.
+Both are served by NVIDIA's hosted API (`config/models.yaml`, ADR 0012). The two ids were
+chosen without access to the live catalog and are **not yet verified** against an account; check
+them with the command in `docs/getting-started.md` before a live run. The judge is a different
+model family from the generator on purpose. Calls use temperature 0 and NVIDIA's guided JSON
+output, but output is not guaranteed identical between runs. A response cache, canonical
+ordering and ids set by code carry most of the repeatability, and a stability eval measures
+the rest. The prices in config are nominal numbers for the cost budget, not NVIDIA's billing.
 
 ## Intended use
 
@@ -87,7 +90,7 @@ Offline results at the time of writing:
 | Memory: question-count reduction | about 0.68 |
 | Memory: contradiction handling, stale misapplication, cross-workspace leaks | 1.0, 0, 0 |
 
-Live results (real model, judge scores, stability): **not run yet**. They need an API key. The
+Live results (real model, judge scores, stability): **not run yet**. They need an NVIDIA API key. The
 first run is saved as the live baseline, and the drift check uses it.
 
 | Date | Change | Live result |
