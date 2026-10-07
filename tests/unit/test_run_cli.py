@@ -17,9 +17,11 @@ from story_agent.discovery.packs import PackSet
 from story_agent.evals.app.gold_model import GoldModel
 from story_agent.evals.cases import EvalCase, load_cases_dir
 from story_agent.interactive import PromptResponder, render_story
+from story_agent.llm import TransientError
 from story_agent.memory.store import SqliteMemoryStore
 from story_agent.nvidia import NvidiaTransport
 from story_agent.responders import AnswersFileResponder, RunAnswers, load_run_answers
+from story_agent.session import Session
 
 ROOT = Path(__file__).resolve().parents[2]
 CASE = {c.id: c for c in load_cases_dir()}["bk-card-dispute"]
@@ -659,3 +661,28 @@ def test_probe_thinking_breaks_a_tie_on_tokens_by_time(monkeypatch: pytest.Monke
 
 def test_the_shipped_config_leaves_thinking_on(app_config: AppConfig) -> None:
     assert app_config.models.extra_body == {}
+
+
+def test_a_model_failure_ends_cleanly_with_the_resume_command(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def boom(self: Session, *_a: object, **_k: object) -> None:
+        raise TransientError("API error 503 (Service temporarily overloaded)")
+
+    monkeypatch.setattr(Session, "start", boom)
+    monkeypatch.setenv("STORY_AGENT_PROVIDER", "nvidia")
+    result = CliRunner().invoke(
+        cli.app,
+        [
+            "run",
+            "a loan scenario",
+            "--runs-dir",
+            str(tmp_path),
+            "--no-memory",
+            "--answers",
+            str(answers_file(tmp_path)),
+        ],
+    )
+    assert result.exit_code == 1
+    assert "story-agent resume run-" in result.output
+    assert "Traceback" not in result.output

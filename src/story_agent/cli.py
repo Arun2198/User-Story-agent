@@ -7,7 +7,7 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, NoReturn
 
 import typer
 
@@ -67,7 +67,7 @@ from story_agent.runcmd import (
     write_private,
 )
 from story_agent.schema import MemoryEntry, MemoryType, Scenario, utcnow
-from story_agent.session import RunOutcome, Session, SessionError
+from story_agent.session import RunOutcome, Session, SessionError, new_run_id
 
 CHECK_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -403,13 +403,27 @@ def run_cmd(  # noqa: PLR0913, PLR0917  (CLI options)
     except (ConfigError, ValueError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(EXIT_ERROR) from exc
+    run_id = new_run_id()
     try:
-        outcome = session.start(scenario_model, chosen.responder)
+        outcome = session.start(scenario_model, chosen.responder, run_id)
+    except LLMError as exc:
+        _model_stopped(exc, run_id)
     finally:
         session.rt.close()
     if outcome.status == "done" and (out is not None or fmt is not None):
         _export_after_run(outcome, fmt, out, root)
     _finish(outcome, chosen, root)
+
+
+def _model_stopped(exc: LLMError, run_id: str) -> NoReturn:
+    """Say the model call gave up. The run is saved up to its last finished step."""
+    typer.echo(f"error: the model call failed: {exc}", err=True)
+    typer.echo(
+        f"The run is saved up to its last finished step. Try again with: "
+        f"story-agent resume {run_id}",
+        err=True,
+    )
+    raise typer.Exit(EXIT_ERROR) from exc
 
 
 def _export_after_run(outcome: RunOutcome, fmt: str | None, out: Path | None, root: Path) -> None:
@@ -442,6 +456,8 @@ def resume_cmd(
         )
         try:
             outcome = session.resume(run_id, chosen.responder)
+        except LLMError as exc:
+            _model_stopped(exc, run_id)
         finally:
             session.rt.close()
     except NoTerminalError as exc:

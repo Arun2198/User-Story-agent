@@ -10,8 +10,8 @@ provider: auto
 
 # Shared by both providers (a provider block can override timeout_s and max_tokens).
 timeout_s: 600          # reasoning models can take minutes to answer
-max_retries: 3          # transient failures (timeouts, 429, 5xx) are retried this many times
-backoff_base_s: 1.0
+max_retries: 5          # transient failures (timeouts, 429, 5xx) are retried this many times
+backoff_base_s: 2.0
 max_tokens: null        # null sends no per-call limit where the provider allows that
 
 providers:
