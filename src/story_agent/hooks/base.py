@@ -21,6 +21,7 @@ from story_agent.config import AppConfig
 from story_agent.guardrails.injection import InjectionDetector
 from story_agent.guardrails.redaction import Redactor
 from story_agent.guardrails.scope import ScopeGuard
+from story_agent.memory.store import MemoryStore
 from story_agent.schema import Finding, HookAction, HookPhase, HookResult, RunState, Severity
 
 
@@ -39,6 +40,7 @@ class HookServices:
     injection: InjectionDetector
     scope_guard: ScopeGuard
     runs_dir: Path | None = None
+    memory: MemoryStore | None = None
 
 
 @dataclass

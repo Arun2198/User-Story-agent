@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from story_agent.hooks.base import FailMode, Hook, HookBlocked, HookContext, HookServices
 from story_agent.hooks.post.checks import GroundingHook, PiiLeakHook, SchemaValidationHook
+from story_agent.hooks.post.memory import MemoryProposalHook
 from story_agent.hooks.post.observe import MetricsHook, TraceHook, UsageAccountingHook
 from story_agent.hooks.pre.guards import (
     BudgetHook,
@@ -45,6 +46,7 @@ def default_registry() -> HookRegistry:
         UsageAccountingHook,
         MetricsHook,
         TraceHook,
+        MemoryProposalHook,
     ):
         registry.register(factory.name, factory)
     return registry

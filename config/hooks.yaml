@@ -16,3 +16,4 @@ post:
   - { name: usage_accounting, per: component, fail_mode: closed }
   - { name: metrics, per: component, fail_mode: open }
   - { name: trace, per: component, fail_mode: open }
+  - { name: memory_proposal, per: run, fail_mode: open }
