@@ -8,6 +8,7 @@ steps with a person. Nothing here talks to a terminal.
 from __future__ import annotations
 
 import json
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -178,7 +179,9 @@ class Flow:
     ) -> T:
         ctx = self._ctx(stage)
         self.pipeline.enforce(HookPhase.PRE, "component", ctx)
+        started = time.monotonic()
         result = run()
+        latency = round(time.monotonic() - started, 3)
         used, cost = usage(result)
         reqs = list(requests(result))
         self.usage = Usage(
@@ -193,6 +196,7 @@ class Flow:
             "input_tokens": used.input_tokens,
             "output_tokens": used.output_tokens,
             "cost_usd": cost,
+            "latency_s": latency,
         }
         ctx.data["output"] = Payload(content=payload(result))
         ctx.data["output_schema"] = Payload
@@ -360,13 +364,19 @@ class Flow:
         """Save only the approved or edited proposals."""
         if self.memory is None:
             return ApplyReport()
-        return apply_decisions(
+        report = apply_decisions(
             self.memory,
             self.deps.config.memory,
             list(proposals),
             decisions,
             self.state.scenario.text,
         )
+        self.state.memory_outcome = {
+            "saved": list(report.saved),
+            "refreshed": list(report.refreshed),
+            "rejected": list(report.rejected),
+        }
+        return report
 
     def _need_checklist(self) -> Checklist:
         if self.checklist is None:

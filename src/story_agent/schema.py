@@ -341,6 +341,7 @@ class RunState(_Model):
     findings: list[Finding] = Field(default_factory=list)
     review_log: list[dict[str, Any]] = Field(default_factory=list)
     review_notes: list[str] = Field(default_factory=list)
+    memory_outcome: dict[str, list[str]] = Field(default_factory=dict)
     critique_loops: int = 0
     stage: str = "intake"
     tokens_used: int = 0
