@@ -24,6 +24,13 @@ do not know which provider is behind it.
   first that works for each model. A fixed mode in config skips the trial. Whatever the mode, the
   reply is cleaned (code fences and `<think>` blocks removed), validated against the
   schema, repaired once, then fails closed, exactly as before.
+- **Reasoning models.** Some models (for example `nvidia/nemotron-3.5-lightning-30b-a3b`) think
+  before they answer. A live check showed one spending its whole token budget on
+  `reasoning_content`, with the schema not enforced. The transport takes the last JSON object in
+  the reply if there is prose first, says so plainly when a model runs out of tokens while
+  thinking, and `extra_body` in config adds per-model request fields (for example to switch the
+  thinking off) without code changes. A model that cannot be made to return JSON promptly is not
+  a good generator for this tool.
 - **Temperature 0** is sent, as the original brief asked. Output is still not guaranteed
   identical between calls.
 - **Errors.** Timeouts, network errors, 408, 409, 425, 429 and 5xx are transient and retried with

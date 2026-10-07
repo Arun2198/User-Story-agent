@@ -106,6 +106,8 @@ first run is saved as the live baseline, and the drift check uses it.
   payment rails. They need review by someone who works in the field.
 - Stories can be well grounded and still badly worded. Review is not optional.
 - Quality outside banking depends on the generic pack and has had less checking.
+- Reasoning models (ones that think before answering) can be slow and costly here, and may need
+  their thinking switched off in `config/models.yaml` to return JSON reliably.
 - English only.
 
 ## Human oversight

@@ -27,6 +27,27 @@ _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.S)
 
 
+def extract_json_object(text: str) -> dict[str, Any]:
+    """Return the JSON object in ``text``. If the model wrote prose first, use the last object."""
+    text = clean_json_text(text)
+    try:
+        whole = json.loads(text)
+    except json.JSONDecodeError:
+        whole = None
+    if isinstance(whole, dict):
+        return whole
+    decoder = json.JSONDecoder()
+    found: dict[str, Any] = {}
+    for match in re.finditer(r"\{", text):
+        try:
+            value, _end = decoder.raw_decode(text[match.start() :])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict) and value:
+            found = value
+    return found
+
+
 def clean_json_text(text: str) -> str:
     """Drop reasoning blocks and code fences some models wrap around JSON."""
     text = _THINK.sub("", text).strip()
@@ -125,6 +146,13 @@ class NvidiaTransport:
                 "type": "json_schema",
                 "json_schema": {"name": request.prompt_id, "schema": json_schema},
             }
+        for key, value in self._models.extra_body.get(request.model, {}).items():
+            current = body.get(key)
+            body[key] = (
+                {**current, **value}
+                if isinstance(current, dict) and isinstance(value, dict)
+                else value
+            )
         return body
 
     @staticmethod
@@ -159,15 +187,18 @@ class NvidiaTransport:
             raise LLMError("the model returned no choices")
         choice = choices[0]
         reason = choice.get("finish_reason")
+        message = choice.get("message") or {}
+        if reason == "length" and message.get("reasoning_content"):
+            raise LLMError(
+                "model stopped with length while thinking; raise max_tokens, or turn its "
+                "thinking off with extra_body in config/models.yaml"
+            )
         if reason in {"length", "content_filter"}:
             raise LLMError(f"model stopped with {reason}")
-        content = (choice.get("message") or {}).get("content")
+        content = message.get("content")
         if not isinstance(content, str) or not content.strip():
             raise LLMError("model returned no text output")
-        try:
-            data = json.loads(clean_json_text(content))
-        except json.JSONDecodeError:
-            data = {}
+        data = extract_json_object(content)
         used = payload.get("usage") or {}
         usage = Usage(int(used.get("prompt_tokens", 0)), int(used.get("completion_tokens", 0)))
-        return RawResponse(data if isinstance(data, dict) else {}, usage)
+        return RawResponse(data, usage)

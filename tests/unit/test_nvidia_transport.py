@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from story_agent.config import AppConfig, ConfigError, ModelsConfig, get_api_key
 from story_agent.llm import LLMError, LLMRequest, StructuredClient, TransientError
-from story_agent.nvidia import NvidiaTransport, clean_json_text
+from story_agent.nvidia import NvidiaTransport, clean_json_text, extract_json_object
 
 SCHEMA: dict[str, Any] = {"type": "object", "properties": {"a": {"type": "string"}}}
 
@@ -378,3 +378,60 @@ def test_a_fixed_mode_never_falls_back(app_config: AppConfig) -> None:
     with pytest.raises(LLMError, match="guided_json"):
         transport(models, handler).send(request(models), SCHEMA)
     assert tried == ["guided_json"]
+
+
+# ---- reasoning models --------------------------------------------------------------------
+
+
+def test_a_model_that_runs_out_of_tokens_while_thinking_gets_a_clear_error(
+    app_config: AppConfig,
+) -> None:
+    payload = {
+        "choices": [
+            {
+                "message": {"content": "Here's a thinking process", "reasoning_content": "Here's"},
+                "finish_reason": "length",
+            }
+        ],
+        "usage": {"prompt_tokens": 25, "completion_tokens": 50},
+    }
+    t = transport(app_config.models, lambda _r: httpx.Response(200, json=payload))
+    with pytest.raises(LLMError, match="while thinking") as info:
+        t.send(request(app_config.models), SCHEMA)
+    assert "extra_body" in str(info.value)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ('Let me think. The answer is {"a": "x"}.', {"a": "x"}),
+        ('First idea {"a": "draft"} but final: {"a": "final"}', {"a": "final"}),
+        ("Prose with {braces} and no json", {}),
+        ('{"a": "x"} trailing words', {"a": "x"}),
+    ],
+)
+def test_json_is_found_after_prose(text: str, expected: dict[str, Any]) -> None:
+    assert extract_json_object(text) == expected
+
+
+def test_extra_body_is_merged_for_the_matching_model_only(app_config: AppConfig) -> None:
+    extra = {
+        app_config.models.generator: {
+            "chat_template_kwargs": {"enable_thinking": False},
+            "nvext": {"max_thinking_tokens": 0},
+        }
+    }
+    models = models_with(app_config, extra_body=extra, structured_output="guided_json")
+    seen: list[dict[str, Any]] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(req.content))
+        return httpx.Response(200, json=reply())
+
+    t = transport(models, handler)
+    t.send(request(models), SCHEMA)
+    t.send(LLMRequest("p", "sys", "user", models.judge), SCHEMA)
+    assert seen[0]["chat_template_kwargs"] == {"enable_thinking": False}
+    assert seen[0]["nvext"] == {"guided_json": SCHEMA, "max_thinking_tokens": 0}
+    assert "chat_template_kwargs" not in seen[1]
+    assert seen[1]["nvext"] == {"guided_json": SCHEMA}

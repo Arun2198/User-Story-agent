@@ -34,6 +34,7 @@ class ModelsConfig(_Cfg):
     base_url: str = "https://integrate.api.nvidia.com/v1"
     api_key_env: str = "NVIDIA_API_KEY"
     structured_output: Literal["auto", "guided_json", "json_schema", "none"] = "auto"
+    extra_body: dict[str, dict[str, Any]] = Field(default_factory=dict)
     temperature: float | None = None
     max_tokens: int = 4096
     timeout_s: float = 60.0
