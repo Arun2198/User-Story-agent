@@ -7,6 +7,10 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
+- Drafting: requirement derivation, `draft`, `criteria` and `critique` stages and prompts, a revision loop (at most two), deterministic ids, ordering and number grounding.
+- `human_review`: approve, edit or reject with sanitised edits and an edit log; persona glossary proposals for memory.
+- Deduplication, id stability and coverage post-hooks.
+- `critic_checks` and `criteria_checks` component evals.
 - Memory: workspace-scoped SQLite store with FTS5, write guard, deterministic recall, conflict detection, write proposals with per-entry approval, and `story-agent memory` commands.
 - Memory evals: retrieval, staleness, contradiction handling, safety, isolation and effect, with hard-fail metrics.
 - `memory_proposal` post-hook.

@@ -5,7 +5,7 @@ criteria. It discovers what is missing, asks clarification questions, remembers
 confirmed answers per workspace, and works for any industry through YAML domain
 packs. Banking is the first pack.
 
-Status: phase 3 (memory). The remaining
+Status: phase 4 (draft, criteria, critique, review). The remaining
 stages arrive in later phases; see `STANDARDS.md` for what is enforced.
 
 ## Setup
@@ -84,3 +84,18 @@ story-agent memory clear --workspace acme
 ```
 
 The CLI reads `config/` from the current directory, or from `STORY_AGENT_CONFIG_DIR`.
+
+## How stories are built
+
+1. Stated and confirmed discovery items become numbered requirements. Nothing the user has
+   not confirmed becomes a requirement.
+2. The model groups requirements into epics and writes stories that cite them. Code
+   assigns ids (`<PREFIX>-0001`), order, provenance, assumptions, NFRs and open questions.
+3. The model writes Given/When/Then criteria. Code rejects invented numbers, flags vague
+   wording and caps the count (`max_criteria_per_story` in `config/standards.yaml`, or your
+   preference).
+4. Critique checks coverage, duplicates, size, readiness and grounding in code, and asks
+   the model for duplicates, contradictions and negotiability. Errors cause a revision, at
+   most twice.
+5. You approve, edit or reject each story. Edits are logged. Estimates and priorities are
+   suggestions you can change.
