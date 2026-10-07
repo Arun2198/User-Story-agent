@@ -13,7 +13,7 @@ from story_agent.config import (
 
 
 def test_loads_repo_config(app_config: AppConfig) -> None:
-    assert app_config.models.generator == "claude-sonnet-5-5"
+    assert app_config.models.generator
     assert app_config.models.judge != app_config.models.generator
     assert app_config.guardrails.budget.max_steps_per_run > 0
 
@@ -38,9 +38,9 @@ def test_non_mapping(tmp_path: Path) -> None:
 
 
 def test_api_key_from_env_only() -> None:
-    assert get_api_key({"ANTHROPIC_API_KEY": "k"}) == "k"
+    assert get_api_key("NVIDIA_API_KEY", {"NVIDIA_API_KEY": "k"}) == "k"
     with pytest.raises(ConfigError):
-        get_api_key({})
+        get_api_key("NVIDIA_API_KEY", {})
 
 
 def test_default_config_dir() -> None:

@@ -94,7 +94,7 @@ def test_a_real_run_becomes_a_valid_trace(
     model_calls = [c for c in calls if c.kind.value == "CLIENT"]
     assert model_calls
     first = model_calls[0].attributes
-    assert first["gen_ai.system"] == "anthropic"
+    assert first["gen_ai.system"] == "nvidia"
     assert first["gen_ai.request.model"] == app_config.models.generator
     assert first["story_agent.prompt_hash"]
     assert root.attributes["gen_ai.usage.total_tokens"] == state.tokens_used

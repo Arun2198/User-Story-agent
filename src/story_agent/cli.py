@@ -462,7 +462,8 @@ def evals_run(  # noqa: PLR0913, PLR0917  (CLI options)
     stability: Annotated[int | None, typer.Option(min=2, help="Repeat each case N times.")] = None,
     memory: Annotated[bool, typer.Option("--memory", help="Memory off then on, per case.")] = False,
     live: Annotated[
-        bool, typer.Option(help="Use the real model (needs ANTHROPIC_API_KEY).")
+        bool,
+        typer.Option(help="Use the real model (needs the API key named in config/models.yaml)."),
     ] = False,
     cases: Annotated[str | None, typer.Option(help="Comma-separated case ids.")] = None,
     cases_dir: Annotated[Path | None, typer.Option(help="Directory of case files.")] = None,

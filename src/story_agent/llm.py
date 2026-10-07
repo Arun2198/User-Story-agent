@@ -1,8 +1,7 @@
 """LLM boundary: transport, validation with one repair retry, caching and cost.
 
-Model names and sampling settings come from config. Claude 5.x models reject
-non-default sampling parameters and forced tool choice, so structured output
-uses ``output_config.format`` and temperature is sent only when configured.
+Model names and sampling settings come from config. This module knows nothing about
+any provider: a ``Transport`` (see ``nvidia.py``) sends the request and returns JSON.
 """
 
 from __future__ import annotations
@@ -14,7 +13,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Generic, Protocol, TypeVar
 
-import anthropic
 from pydantic import BaseModel, ValidationError
 
 from story_agent.cache import ResponseCache
@@ -203,60 +201,3 @@ class StructuredClient:
             self._models.backoff_base_s,
             self._sleep,
         )
-
-
-class AnthropicTransport:
-    """Transport backed by the Anthropic SDK using JSON-schema structured output."""
-
-    def __init__(self, api_key: str, models: ModelsConfig) -> None:
-        """Create the SDK client. SDK retries are off; retry_transient handles them."""
-        self._client = anthropic.Anthropic(api_key=api_key, timeout=models.timeout_s, max_retries=0)
-        self._max_tokens = models.max_tokens
-        self._temperature = models.temperature
-
-    def send(self, request: LLMRequest, json_schema: dict[str, Any]) -> RawResponse:
-        """Call the API and return the parsed JSON object."""
-        user = request.user
-        if request.repair:
-            user += (
-                "\n\nYour previous output failed validation with this error. "
-                f"Return corrected JSON only.\n{request.repair}"
-            )
-        extra: dict[str, Any] = {}
-        if self._temperature is not None:
-            extra["temperature"] = self._temperature
-        try:
-            response = self._client.messages.create(
-                model=request.model,
-                max_tokens=self._max_tokens,
-                system=request.system,
-                messages=[{"role": "user", "content": user}],
-                output_config={
-                    "format": {
-                        "type": "json_schema",
-                        "schema": anthropic.transform_schema(json_schema),
-                    }
-                },
-                extra_body=extra,
-            )
-        except (
-            anthropic.APIConnectionError,
-            anthropic.APITimeoutError,
-            anthropic.RateLimitError,
-        ) as exc:
-            raise TransientError(str(exc)) from exc
-        except anthropic.APIStatusError as exc:
-            if exc.status_code >= 500:
-                raise TransientError(str(exc)) from exc
-            raise LLMError(f"API error {exc.status_code}") from exc
-        if response.stop_reason in {"refusal", "max_tokens"}:
-            raise LLMError(f"model stopped with {response.stop_reason}")
-        for block in response.content:
-            if block.type == "text":
-                try:
-                    data = json.loads(block.text)
-                except json.JSONDecodeError:
-                    data = {}
-                usage = Usage(response.usage.input_tokens, response.usage.output_tokens)
-                return RawResponse(data if isinstance(data, dict) else {}, usage)
-        raise LLMError("model returned no text output")

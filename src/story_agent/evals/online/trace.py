@@ -159,7 +159,7 @@ def build_trace(state: RunState, events: Sequence[Mapping[str, Any]]) -> Trace:
             "gen_ai.usage.output_tokens": int(usage.get("output_tokens", 0)),
         }
         if call.get("model"):
-            attrs["gen_ai.system"] = "anthropic"
+            attrs["gen_ai.system"] = "nvidia"
             attrs["gen_ai.request.model"] = str(call["model"])
             attrs["story_agent.prompt_id"] = str(call.get("prompt_id", ""))
             attrs["story_agent.prompt_hash"] = str(call.get("prompt_hash", ""))

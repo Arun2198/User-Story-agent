@@ -153,12 +153,12 @@ def test_a_missing_api_key_is_a_clean_error(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     def no_key(_config: AppConfig) -> None:
-        raise ConfigError("ANTHROPIC_API_KEY is not set")
+        raise ConfigError("NVIDIA_API_KEY is not set")
 
     monkeypatch.setattr(runcmd, "make_transport", no_key)
     result = run("--answers", str(answers_file(tmp_path)))
     assert result.exit_code == 1
-    assert "ANTHROPIC_API_KEY" in result.output
+    assert "NVIDIA_API_KEY" in result.output
 
 
 def test_approved_memory_is_saved_in_the_workspace_and_only_there(tmp_path: Path) -> None:

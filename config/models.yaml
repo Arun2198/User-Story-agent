@@ -1,14 +1,21 @@
-# Model names live here only.
-# temperature: set to 0 for models that accept sampling parameters. Claude 5.x
-# models reject non-default values, so it stays null for them (see ADR 0002).
-temperature: null
-generator: claude-sonnet-5-5
-judge: claude-opus-5-5
+# Model names and the provider settings live here only.
+# Provider: NVIDIA-hosted models through an OpenAI-style endpoint. The key is read from the
+# environment variable named by api_key_env; it is never stored in a file.
+base_url: https://integrate.api.nvidia.com/v1
+api_key_env: NVIDIA_API_KEY
+# guided_json: NVIDIA's nvext.guided_json (recommended). json_schema: response_format.
+# none: the schema is added to the prompt and the reply is checked afterwards.
+structured_output: guided_json
+temperature: 0
+# Check both ids against GET /v1/models for your account before a live run (see docs/getting-started.md).
+generator: meta/llama-3.3-70b-instruct
+judge: nvidia/llama-3.3-nemotron-super-49b-v1
 max_tokens: 4096
-timeout_s: 60
+timeout_s: 120
 max_retries: 3
 backoff_base_s: 1.0
-# USD per million tokens, used for the cost budget. Update when prices change.
+# Nominal USD per million tokens, used only for the cost budget and cost metrics. The hosted
+# free tier does not bill per token; set your real rate if you move to a paid host.
 prices:
-  claude-sonnet-5-5: { input: 2.0, output: 10.0 }
-  claude-opus-5-5: { input: 4.0, output: 20.0 }
+  meta/llama-3.3-70b-instruct: { input: 0.5, output: 0.5 }
+  nvidia/llama-3.3-nemotron-super-49b-v1: { input: 0.5, output: 0.5 }

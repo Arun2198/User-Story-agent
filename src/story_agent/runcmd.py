@@ -16,7 +16,8 @@ from story_agent.evals.online import build_online_evaluator
 from story_agent.graph import Runtime
 from story_agent.hooks import build_pipeline, default_registry
 from story_agent.interactive import PromptResponder
-from story_agent.llm import AnthropicTransport, StructuredClient, Transport
+from story_agent.llm import StructuredClient, Transport
+from story_agent.nvidia import NvidiaTransport
 from story_agent.responders import AnswersFileResponder, load_run_answers
 from story_agent.session import Responder, RunOutcome
 
@@ -46,7 +47,7 @@ def write_private(path: Path, text: str) -> None:
 
 def make_transport(config: AppConfig) -> Transport:
     """Return the real model transport. The key comes from the environment only."""
-    return AnthropicTransport(get_api_key(), config.models)
+    return NvidiaTransport(get_api_key(config.models.api_key_env), config.models)
 
 
 @dataclass

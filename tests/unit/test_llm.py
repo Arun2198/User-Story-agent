@@ -6,7 +6,7 @@ from hypothesis import strategies as st
 from pydantic import BaseModel
 
 from story_agent.cache import MemoryCache, SqliteCache
-from story_agent.config import AppConfig
+from story_agent.config import AppConfig, Price
 from story_agent.fake_llm import FakeTransport, RecordingTransport, load_recordings
 from story_agent.hashing import cache_key
 from story_agent.llm import (
@@ -27,14 +27,17 @@ class Out(BaseModel):
 
 
 def _req(user: str = "hi", memory: tuple[str, ...] = ()) -> LLMRequest:
-    return LLMRequest("p1", "system", user, "claude-sonnet-5-5", memory)
+    return LLMRequest("p1", "system", user, "test-model", memory)
 
 
 def _client(
     app_config: AppConfig, fake: FakeTransport, cache: MemoryCache | None = None
 ) -> tuple[StructuredClient, list[float]]:
     sleeps: list[float] = []
-    return StructuredClient(fake, app_config.models, cache, sleep=sleeps.append), sleeps
+    models = app_config.models.model_copy(
+        update={"prices": {"test-model": Price(input=2.0, output=10.0)}}
+    )
+    return StructuredClient(fake, models, cache, sleep=sleeps.append), sleeps
 
 
 def test_valid_output(app_config: AppConfig) -> None:
@@ -136,8 +139,11 @@ def test_retry_helper_returns_first_success() -> None:
 
 
 def test_cost(app_config: AppConfig) -> None:
-    cost = call_cost(app_config.models, "claude-sonnet-5-5", Usage(1_000_000, 1_000_000))
-    assert cost == pytest.approx(12.0)
+    models = app_config.models.model_copy(
+        update={"prices": {"test-model": Price(input=2.0, output=10.0)}}
+    )
+    assert call_cost(models, "test-model", Usage(1_000_000, 1_000_000)) == pytest.approx(12.0)
+    assert call_cost(app_config.models, app_config.models.generator, Usage(1_000_000, 0)) > 0
     assert call_cost(app_config.models, "unknown", Usage(10, 10)) == 0.0
 
 

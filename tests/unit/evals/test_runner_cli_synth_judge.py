@@ -133,7 +133,7 @@ def test_baseline_helpers(tmp_path: Path) -> None:
 
 
 def test_live_mode_needs_a_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
     with pytest.raises(ConfigError):
         run_suite(_options(tmp_path, app=True, live=True, case_ids=["bk-overdraft"]))
 

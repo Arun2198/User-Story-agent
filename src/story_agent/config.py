@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,6 +31,9 @@ class ModelsConfig(_Cfg):
 
     generator: str
     judge: str
+    base_url: str = "https://integrate.api.nvidia.com/v1"
+    api_key_env: str = "NVIDIA_API_KEY"
+    structured_output: Literal["guided_json", "json_schema", "none"] = "guided_json"
     temperature: float | None = None
     max_tokens: int = 4096
     timeout_s: float = 60.0
@@ -155,10 +158,10 @@ def load_config(config_dir: Path | None = None) -> AppConfig:
     )
 
 
-def get_api_key(env: Mapping[str, str] | None = None) -> str:
-    """Return the API key from the environment or raise."""
+def get_api_key(name: str, env: Mapping[str, str] | None = None) -> str:
+    """Return the API key held in the environment variable ``name``, or raise."""
     env = os.environ if env is None else env
-    key = env.get("ANTHROPIC_API_KEY", "")
+    key = env.get(name, "").strip()
     if not key:
-        raise ConfigError("ANTHROPIC_API_KEY is not set")
+        raise ConfigError(f"{name} is not set")
     return key
