@@ -76,7 +76,7 @@ class RawResponse:
     """Parsed JSON object plus usage, before schema validation."""
 
     data: dict[str, Any]
-    usage: Usage = Usage()
+    usage: Usage = field(default_factory=Usage)
 
 
 @dataclass(frozen=True)
