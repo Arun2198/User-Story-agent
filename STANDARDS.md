@@ -22,7 +22,7 @@ phase shown), **manual** (a review step).
 | Hypothesis property tests | cache keys, redaction, injection quarantine, deterministic ids, preferences whitelist | enforced |
 | Coverage 85% overall | `[tool.coverage.report] fail_under` | enforced |
 | Coverage 95% on guardrails and hooks | CI `quality`, `coverage report --fail-under=95` on those paths | enforced |
-| Offline evals as a regression gate | CI `evals` job, `config/evals.yaml` | planned (phase 5) |
+| Offline evals as a regression gate | CI `evals` job, `config/evals.yaml`, baselines in `src/story_agent/evals/baselines/` | enforced |
 | bandit, pip-audit, gitleaks | CI `security`; pre-commit (gitleaks) | enforced |
 | License check, CycloneDX SBOM | CI `supply-chain` | enforced |
 | Conventional Commits | pre-commit `commit-msg` hook | enforced locally |

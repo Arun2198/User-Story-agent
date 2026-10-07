@@ -85,6 +85,25 @@ story-agent memory clear --workspace acme
 
 The CLI reads `config/` from the current directory, or from `STORY_AGENT_CONFIG_DIR`.
 
+## Evals
+
+```bash
+story-agent evals run                      # everything, offline
+story-agent evals run --component redaction
+story-agent evals run --app --cases bk-card-dispute
+story-agent evals run --stability 5 --live # needs ANTHROPIC_API_KEY
+story-agent evals add-case my-case.json    # validates, then stores the case
+story-agent evals run --update-baseline    # after an intended change
+```
+
+Reports go to `eval-reports/`. Exit code 0 is ok, 1 a threshold miss or regression against
+the baseline, 2 a hard failure (a PII or injection leak). Thresholds are in
+`config/evals.yaml`.
+
+Offline runs use a scripted model driven by the case's gold labels. They test the plumbing
+and the guardrails, not model quality; only `--live` measures the real model. The cases are
+synthetic and written by hand. A simulated user answers from each case's hidden answer key.
+
 ## How stories are built
 
 1. Stated and confirmed discovery items become numbered requirements. Nothing the user has

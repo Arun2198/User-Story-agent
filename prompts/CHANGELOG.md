@@ -11,3 +11,5 @@ need an eval comparison recorded in `docs/model-card.md`.
 | draft | 1 | First version. |
 | criteria | 1 | First version. |
 | critique | 1 | First version. |
+| scenario_synth | 1 | First version. |
+| judge | 1 | First version. |

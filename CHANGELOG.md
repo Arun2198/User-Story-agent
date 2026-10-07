@@ -7,6 +7,12 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
+- End-to-end evals: 14 synthetic banking and generic cases with hidden answer keys, a simulated user, an offline scripted model, metrics for discovery, stories, guardrails, preferences and cost.
+- Memory app eval (off then on per case, conflicts, stale entries, isolation) and stability eval (repeat runs).
+- Eval runner with baselines, regression tolerance and exit codes; `story-agent evals run` and `evals add-case`.
+- Scenario synthesiser and LLM judge prompts (live mode only).
+- `Flow`, the stage sequence with hooks around each step, shared by the evals and the later graph.
+- CI `evals` job.
 - Drafting: requirement derivation, `draft`, `criteria` and `critique` stages and prompts, a revision loop (at most two), deterministic ids, ordering and number grounding.
 - `human_review`: approve, edit or reject with sanitised edits and an edit log; persona glossary proposals for memory.
 - Deduplication, id stability and coverage post-hooks.
