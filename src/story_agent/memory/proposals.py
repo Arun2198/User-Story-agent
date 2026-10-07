@@ -7,6 +7,7 @@ guard before it is proposed and again before it is saved.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -25,6 +26,7 @@ from story_agent.schema import (
     MemoryEntry,
     MemoryType,
     RunState,
+    StoryStatus,
     utcnow,
 )
 
@@ -156,6 +158,35 @@ def _candidates(state: RunState, config: MemoryConfig, now: datetime) -> list[Me
                 now,
             )
         )
+    out.extend(_persona_candidates(state, config, now))
+    return out
+
+
+def _persona_candidates(state: RunState, config: MemoryConfig, now: datetime) -> list[MemoryEntry]:
+    discovery = state.discovery
+    if discovery is None:
+        return []
+    personas = {
+        s.persona.strip()
+        for s in state.stories
+        if s.status in {StoryStatus.APPROVED, StoryStatus.EDITED} and s.persona.strip()
+    }
+    out: list[MemoryEntry] = []
+    for persona in sorted(personas, key=str.casefold):
+        slug = re.sub(r"[^a-z0-9]+", "_", persona.casefold()).strip("_")
+        if slug:
+            out.append(
+                _make_entry(
+                    state,
+                    config,
+                    MemoryType.GLOSSARY,
+                    discovery.domain,
+                    None,
+                    f"term:{slug}",
+                    f"Persona: {persona}",
+                    now,
+                )
+            )
     return out
 
 

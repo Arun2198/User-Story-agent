@@ -6,6 +6,7 @@ from story_agent.hooks.base import FailMode, Hook, HookBlocked, HookContext, Hoo
 from story_agent.hooks.post.checks import GroundingHook, PiiLeakHook, SchemaValidationHook
 from story_agent.hooks.post.memory import MemoryProposalHook
 from story_agent.hooks.post.observe import MetricsHook, TraceHook, UsageAccountingHook
+from story_agent.hooks.post.quality import CoverageHook, DeduplicationHook, IdStabilityHook
 from story_agent.hooks.pre.guards import (
     BudgetHook,
     InputSizeHook,
@@ -47,6 +48,9 @@ def default_registry() -> HookRegistry:
         MetricsHook,
         TraceHook,
         MemoryProposalHook,
+        DeduplicationHook,
+        IdStabilityHook,
+        CoverageHook,
     ):
         registry.register(factory.name, factory)
     return registry

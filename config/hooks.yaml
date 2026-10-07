@@ -13,6 +13,9 @@ post:
   - { name: schema_validation, per: component, fail_mode: closed }
   - { name: grounding, per: component, fail_mode: closed }
   - { name: pii_leak, per: component, fail_mode: closed }
+  - { name: deduplication, per: component, fail_mode: closed }
+  - { name: id_stability, per: component, fail_mode: closed }
+  - { name: coverage, per: component, fail_mode: closed }
   - { name: usage_accounting, per: component, fail_mode: closed }
   - { name: metrics, per: component, fail_mode: open }
   - { name: trace, per: component, fail_mode: open }
