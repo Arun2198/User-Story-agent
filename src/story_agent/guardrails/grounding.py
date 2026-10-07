@@ -71,6 +71,7 @@ class GroundingVerifier:
         self._scenario = normalize(state.redacted_text or state.scenario.text)
         notes = [state.redacted_notes or state.scenario.notes]
         notes.extend(r.free_text_reply for r in state.rounds if r.free_text_reply)
+        notes.extend(state.review_notes)
         self._notes = normalize("\n".join(notes))
         self._answers = {a.question_id: a for a in state.answers}
         self._memory_confirmed = {

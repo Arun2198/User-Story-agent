@@ -1,6 +1,11 @@
 story_template: "As a {persona}, I want {want}, so that {benefit}."
 estimate_scale: fibonacci
 estimate_values: [1, 2, 3, 5, 8, 13]
+estimate_scales:
+  fibonacci: [1, 2, 3, 5, 8, 13]
+  tshirt: [1, 2, 3, 5, 8]
+  hours: []
+max_hours: 80
 priority_scheme: moscow
 max_criteria_per_story: 8
 acceptance_format: given_when_then
@@ -21,3 +26,30 @@ clarification:
   max_questions_per_round: 6
   max_rounds: 3
   free_text_prompt: "Anything else you want to add or change?"
+drafting:
+  max_stories: 30
+  max_requirements_per_story: 4
+  max_estimate_before_split: 8
+  duplicate_similarity: 0.9
+  max_revision_loops: 2
+  criteria_batch_size: 8
+nfr_categories:
+  - performance_availability
+  - security
+  - audit
+  - audit_retention
+  - business_continuity
+  - data_privacy
+vague_terms:
+  - quickly
+  - fast
+  - user-friendly
+  - appropriate
+  - appropriately
+  - as needed
+  - easily
+  - properly
+  - reasonable
+  - efficient
+  - seamless
+  - etc

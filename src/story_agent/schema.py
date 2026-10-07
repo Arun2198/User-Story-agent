@@ -271,6 +271,7 @@ class Requirement(_Model):
     id: str
     text: str
     category: str
+    assumed: bool = False
     provenance: list[Provenance] = Field(min_length=1)
 
 
@@ -339,6 +340,8 @@ class RunState(_Model):
     stories: list[Story] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     review_log: list[dict[str, Any]] = Field(default_factory=list)
+    review_notes: list[str] = Field(default_factory=list)
+    critique_loops: int = 0
     stage: str = "intake"
     tokens_used: int = 0
     cost_usd: float = 0.0
