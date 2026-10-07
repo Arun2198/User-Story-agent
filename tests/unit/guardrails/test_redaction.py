@@ -173,3 +173,14 @@ def test_property_roundtrip_and_idempotence(text: str) -> None:
 @pytest.mark.parametrize("empty", ["", "   ", "\n"])
 def test_empty_text(empty: str) -> None:
     assert Redactor().redact(empty) == empty
+
+
+def test_model_provider_keys_are_redacted() -> None:
+    key = "nvapi-" + "AbCdEfGh1234_-" * 3
+    out = Redactor().redact(f"The gateway key is {key} for now.")
+    assert key not in out
+    assert "<API_KEY_1>" in out
+    assert (
+        Redactor().redact("Keys start with the nvapi prefix.")
+        == "Keys start with the nvapi prefix."
+    )

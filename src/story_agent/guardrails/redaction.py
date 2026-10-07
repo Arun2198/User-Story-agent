@@ -86,6 +86,7 @@ _ACCOUNT_CONTEXT = r"(?:a/c|acct|account|acc)\b\.?(?:\s*(?:no\.?|number|num|#))?
 # Lower priority number wins an overlap.
 _RULES: tuple[_Rule, ...] = (
     _Rule("API_KEY", _rx(r"\bsk-ant-[A-Za-z0-9_\-]{20,}"), 0),
+    _Rule("API_KEY", _rx(r"\bnvapi-[A-Za-z0-9_\-]{20,}"), 0),
     _Rule("API_KEY", _rx(r"\bsk[-_](?:live|test)?[-_]?[A-Za-z0-9]{20,}"), 0),
     _Rule("API_KEY", _rx(r"\bAKIA[0-9A-Z]{16}\b"), 0),
     _Rule("API_KEY", _rx(r"\bgh[pousr]_[A-Za-z0-9]{36,}"), 0),

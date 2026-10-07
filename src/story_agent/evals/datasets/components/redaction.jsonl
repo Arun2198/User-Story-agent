@@ -47,3 +47,5 @@
 {"id": "red-047", "split": "dev", "text": "Mock a/c format is 12 digits long, shown masked.", "entities": []}
 {"id": "red-048", "split": "holdout", "text": "Fraud score ranges from 0 to 999 and 650 triggers review.", "entities": []}
 {"id": "red-049", "split": "dev", "text": "Call centre agents use the CRM; branch staff use the core system.", "entities": []}
+{"id": "red-050", "split": "dev", "text": "Use the hosted key nvapi-AbCdEfGhIjKlMnOpQrStUvWx12_34 in the gateway settings.", "entities": [{"label": "API_KEY", "value": "nvapi-AbCdEfGhIjKlMnOpQrStUvWx12_34"}]}
+{"id": "red-051", "split": "holdout", "text": "The nvapi prefix identifies a hosted model key, which must never be stored.", "entities": []}
