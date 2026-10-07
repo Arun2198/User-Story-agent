@@ -134,9 +134,10 @@ class NvidiaTransport:
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            "max_tokens": self._models.max_tokens,
             "stream": False,
         }
+        if self._models.max_tokens is not None:
+            body["max_tokens"] = self._models.max_tokens
         if self._models.temperature is not None:
             body["temperature"] = self._models.temperature
         if mode == "guided_json":
@@ -190,7 +191,7 @@ class NvidiaTransport:
         message = choice.get("message") or {}
         if reason == "length" and message.get("reasoning_content"):
             raise LLMError(
-                "model stopped with length while thinking; raise max_tokens, or turn its "
+                "model stopped with length while thinking; set max_tokens, or turn its "
                 "thinking off with extra_body in config/models.yaml"
             )
         if reason in {"length", "content_filter"}:

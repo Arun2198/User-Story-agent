@@ -203,7 +203,7 @@ plumbing work, not how good the real model's stories are. Only `--live` tests th
 | `no such file ... config` or missing prompts | Run from the repository folder, or set `STORY_AGENT_CONFIG_DIR` |
 | `Paused: ...` and a `resume` hint | The run is saved. Fix what it names and run `resume` |
 | `I can only turn scenarios into user stories...` | The request was judged out of scope. Describe a need or process, not a question |
-| `model stopped with length while thinking` | The model is a reasoning model and used its token budget thinking. Turn its thinking off with `extra_body` in `config/models.yaml`, raise `max_tokens`, or choose a different model |
+| `model stopped with length while thinking` | The model is a reasoning model and used its token budget thinking. Turn its thinking off with `extra_body` in `config/models.yaml`, set `max_tokens`, or choose a different model |
 | `error: run ... has not finished` | `publish` needs a finished run. `resume` it first |
 | A story count of zero or a block message | A guardrail stopped the run. The message names the reason |
 | Cost surprises | Budgets are in `config/guardrails.yaml`. Check `runs/<id>/trace.jsonl` |

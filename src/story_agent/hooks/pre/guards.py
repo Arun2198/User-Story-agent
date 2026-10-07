@@ -68,7 +68,8 @@ class BudgetHook:
         """Compare run totals with the configured budget."""
         budget = ctx.config.guardrails.budget
         state = ctx.state
-        if state.tokens_used >= budget.max_tokens_per_run:
+        limit = budget.max_tokens_per_run
+        if limit is not None and state.tokens_used >= limit:
             return blocked("BUDGET_EXCEEDED", "token budget used up", "tokens")
         if state.cost_usd >= budget.max_cost_usd_per_run:
             return blocked("BUDGET_EXCEEDED", "cost budget used up", "cost")

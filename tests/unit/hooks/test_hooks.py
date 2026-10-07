@@ -96,9 +96,22 @@ def test_scope_guard_blocks_pure_attack_and_sets_refusal(app_config: AppConfig) 
 def test_budget(app_config: AppConfig) -> None:
     hook = BudgetHook()
     budget = app_config.guardrails.budget
+    assert budget.max_tokens_per_run is None  # no token cap by default
     assert hook.run(make_ctx(app_config)).action is HookAction.PASS
+    huge = make_ctx(app_config)
+    huge.state.tokens_used = 10**9
+    assert hook.run(huge).action is HookAction.PASS
+    capped = app_config.model_copy(
+        update={
+            "guardrails": app_config.guardrails.model_copy(
+                update={"budget": budget.model_copy(update={"max_tokens_per_run": 100})}
+            )
+        }
+    )
+    over = make_ctx(capped)
+    over.state.tokens_used = 100
+    assert hook.run(over).findings[0].code == "BUDGET_EXCEEDED"
     for field, value in (
-        ("tokens_used", budget.max_tokens_per_run),
         ("cost_usd", budget.max_cost_usd_per_run),
         ("steps", budget.max_steps_per_run),
     ):

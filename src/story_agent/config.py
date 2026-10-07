@@ -36,7 +36,7 @@ class ModelsConfig(_Cfg):
     structured_output: Literal["auto", "guided_json", "json_schema", "none"] = "auto"
     extra_body: dict[str, dict[str, Any]] = Field(default_factory=dict)
     temperature: float | None = None
-    max_tokens: int = 4096
+    max_tokens: int | None = None  # None: no per-call limit is sent
     timeout_s: float = 60.0
     max_retries: int = Field(default=3, ge=0)
     backoff_base_s: float = 1.0
@@ -46,7 +46,7 @@ class ModelsConfig(_Cfg):
 class BudgetConfig(_Cfg):
     """Per-run limits."""
 
-    max_tokens_per_run: int
+    max_tokens_per_run: int | None = None  # None: no token cap; cost and steps still apply
     max_cost_usd_per_run: float
     max_steps_per_run: int
 

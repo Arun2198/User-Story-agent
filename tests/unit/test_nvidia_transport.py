@@ -435,3 +435,18 @@ def test_extra_body_is_merged_for_the_matching_model_only(app_config: AppConfig)
     assert seen[0]["nvext"] == {"guided_json": SCHEMA, "max_thinking_tokens": 0}
     assert "chat_template_kwargs" not in seen[1]
     assert seen[1]["nvext"] == {"guided_json": SCHEMA}
+
+
+def test_no_token_limit_is_sent_by_default_and_a_configured_one_is(app_config: AppConfig) -> None:
+    assert app_config.models.max_tokens is None
+    seen: list[dict[str, Any]] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(req.content))
+        return httpx.Response(200, json=reply())
+
+    transport(app_config.models, handler).send(request(app_config.models), SCHEMA)
+    capped = models_with(app_config, max_tokens=300)
+    transport(capped, handler).send(request(capped), SCHEMA)
+    assert "max_tokens" not in seen[0]
+    assert seen[1]["max_tokens"] == 300
