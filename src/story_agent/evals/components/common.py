@@ -38,7 +38,8 @@ def check_thresholds(
     for metric, bounds in spec.items():
         value = metrics.get(f"{prefix}{metric}")
         if value is None:
-            failures.append(f"{prefix}{metric}: missing")
+            if not bounds.get("optional"):
+                failures.append(f"{prefix}{metric}: missing")
             continue
         if "min" in bounds and value < bounds["min"]:
             failures.append(f"{prefix}{metric}={value:.3f} below min {bounds['min']}")

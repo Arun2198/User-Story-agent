@@ -87,3 +87,8 @@ def test_the_criteria_eval_fails_if_the_vague_list_is_empty(app_config: AppConfi
     report = drafting.criteria_checks(broken, app_config.evals)
     assert not report.thresholds_met
     assert report.metrics["vague_recall"] == 0
+
+
+def test_optional_metrics_may_be_missing() -> None:
+    spec = {"a": {"min": 1.0, "optional": True}, "b": {"min": 1.0}}
+    assert check_thresholds({}, spec) == ["b: missing"]
