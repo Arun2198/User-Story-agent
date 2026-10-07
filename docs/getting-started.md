@@ -68,18 +68,17 @@ Never put the key in a file you commit, a chat or a screenshot. If a key is expo
 in the NVIDIA console and make a new one. To use another variable name, change `api_key_env` in
 `config/models.yaml`.
 
-**Check the two model ids once.** `config/models.yaml` names a generator and a judge. They were
-chosen without access to the live catalog, so confirm they exist for your account:
+**Check the model ids.** `config/models.yaml` names a generator and a judge. Hosted model ids get
+retired, so confirm they are live:
 
 ```bash
-curl -s https://integrate.api.nvidia.com/v1/models -H "Authorization: Bearer $NVIDIA_API_KEY" \
-  | python3 -c "import sys,json; print('\n'.join(sorted(m['id'] for m in json.load(sys.stdin)['data'])))" \
-  | grep -i -E "llama-3.3|nemotron"
+uv run story-agent models                     # every id your key can use, and whether yours are in it
+uv run story-agent models --filter nemotron   # only ids containing "nemotron"
 ```
 
 If an id is missing, copy a listed one into `generator` or `judge` in `config/models.yaml`. A
-wrong id shows up as `API error 404: model ... was not found`. If the answer is
-`the key was rejected`, the key is wrong, expired or has no access.
+retired id shows up as `API error 410 ... has been retired`, an unknown one as
+`API error 404: model ... was not found`, and a bad key as `the key was rejected`.
 
 ### 5. Your first run
 
@@ -203,6 +202,7 @@ plumbing work, not how good the real model's stories are. Only `--live` tests th
 | `no such file ... config` or missing prompts | Run from the repository folder, or set `STORY_AGENT_CONFIG_DIR` |
 | `Paused: ...` and a `resume` hint | The run is saved. Fix what it names and run `resume` |
 | `I can only turn scenarios into user stories...` | The request was judged out of scope. Describe a need or process, not a question |
+| `API error 410 ... has been retired` | The configured model id is gone. Run `uv run story-agent models`, then put a listed id in `generator` and `judge` in `config/models.yaml` |
 | `model stopped with length while thinking` | The model is a reasoning model and used its token budget thinking. Turn its thinking off with `extra_body` in `config/models.yaml`, set `max_tokens`, or choose a different model |
 | `error: run ... has not finished` | `publish` needs a finished run. `resume` it first |
 | A story count of zero or a block message | A guardrail stopped the run. The message names the reason |

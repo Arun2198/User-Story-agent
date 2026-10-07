@@ -11,13 +11,13 @@ Model names live in `config/models.yaml` only. At the time of writing:
 
 | Role | Config key | Value |
 |---|---|---|
-| Generator (every pipeline call) | `generator` | `meta/llama-3.3-70b-instruct` |
-| Judge (evals and sampled online scoring) | `judge` | `nvidia/llama-3.3-nemotron-super-49b-v1` |
+| Generator (every pipeline call) | `generator` | `nvidia/nemotron-3.5-lightning-30b-a3b` |
+| Judge (evals and sampled online scoring) | `judge` | `nvidia/nemotron-3.5-lightning-30b-a3b` |
 
-Both are served by NVIDIA's hosted API (`config/models.yaml`, ADR 0012). The two ids were
-chosen without access to the live catalog and are **not yet verified** against an account; check
-them with the command in `docs/getting-started.md` before a live run. The judge is a different
-model family from the generator on purpose. Calls use temperature 0 and NVIDIA's guided JSON
+Both are served by NVIDIA's hosted API (`config/models.yaml`, ADR 0012). Model ids get retired (an earlier choice was, and
+the API answered 410), so check them with `story-agent models` before a live run. The judge is
+currently the **same model as the generator**, which is weaker than the intended setup (a
+different, stronger model, so it does not mark its own work). Calls use temperature 0 and NVIDIA's guided JSON
 output, but output is not guaranteed identical between runs. A response cache, canonical
 ordering and ids set by code carry most of the repeatability, and a stability eval measures
 the rest. The prices in config are nominal numbers for the cost budget, not NVIDIA's billing.

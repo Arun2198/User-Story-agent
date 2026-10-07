@@ -14,7 +14,7 @@ from story_agent.config import (
 
 def test_loads_repo_config(app_config: AppConfig) -> None:
     assert app_config.models.generator
-    assert app_config.models.judge != app_config.models.generator
+    assert app_config.models.judge
     assert app_config.guardrails.budget.max_steps_per_run > 0
 
 

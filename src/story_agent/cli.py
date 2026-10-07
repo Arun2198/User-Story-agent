@@ -11,7 +11,7 @@ from typing import Annotated
 import typer
 
 from story_agent import runcmd
-from story_agent.config import ConfigError, default_config_dir, load_config
+from story_agent.config import ConfigError, default_config_dir, get_api_key, load_config
 from story_agent.discovery.packs import load_packs
 from story_agent.evals.cases import datasets_dir, load_case, save_case, validate_case
 from story_agent.evals.online.config import parse_online
@@ -26,8 +26,10 @@ from story_agent.evals.runner import (
     load_baseline,
     run_suite,
 )
+from story_agent.llm import LLMError
 from story_agent.memory.recall import is_stale
 from story_agent.memory.store import MemoryStoreError, SqliteMemoryStore, UnsafeContentError
+from story_agent.nvidia import NvidiaTransport
 from story_agent.publish import PublishBlocked, apply_plan, approve, service
 from story_agent.publish.base import NotEnabledError
 from story_agent.publish.service import (
@@ -198,6 +200,33 @@ def clear_cmd(
     count = store.clear()
     store.close()
     typer.echo(f"cleared {count} entries from workspace '{workspace}'")
+
+
+# ---- models ----------------------------------------------------------------------
+
+
+@app.command("models")
+def models_cmd(
+    filter_: Annotated[
+        str | None, typer.Option("--filter", help="Only ids containing this text.")
+    ] = None,
+) -> None:
+    """List the model ids your key can use, and say if the configured ones are among them."""
+    try:
+        config = load_config(default_config_dir())
+        transport = NvidiaTransport(get_api_key(config.models.api_key_env), config.models)
+        ids = transport.list_models()
+    except (ConfigError, LLMError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    shown = [i for i in ids if not filter_ or filter_.casefold() in i.casefold()]
+    typer.echo("\n".join(shown))
+    typer.echo(f"{len(shown)} of {len(ids)} models")
+    for role in ("generator", "judge"):
+        name = getattr(config.models, role)
+        typer.echo(f"{role}: {name} {'is available' if name in ids else 'is NOT in the list'}")
+    if not all(getattr(config.models, r) in ids for r in ("generator", "judge")):
+        raise typer.Exit(EXIT_ERROR)
 
 
 # ---- run and resume --------------------------------------------------------------

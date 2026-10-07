@@ -367,17 +367,18 @@ def test_judge_uses_the_judge_model_and_scales_scores(app_config: AppConfig) -> 
             ]
         }
     )
-    scores = judge_run(
-        StructuredClient(fake, app_config.models), app_config, ROOT / "prompts", state
+    config = app_config.model_copy(
+        update={"models": app_config.models.model_copy(update={"judge": "judge/other-model"})}
     )
+    scores = judge_run(StructuredClient(fake, config.models), config, ROOT / "prompts", state)
     assert (
         scores.groundedness,
         scores.completeness,
         scores.testability,
         scores.unsupported_claims,
     ) == (1.0, 0.5, 0.0, 2)
-    assert fake.calls[0].model == app_config.models.judge
-    assert app_config.models.judge != app_config.models.generator
+    assert fake.calls[0].model == "judge/other-model"
+    assert fake.calls[0].model != config.models.generator
     for kind in ("scenario", "questions", "requirements", "stories"):
         assert f'<untrusted_data kind="{kind}">' in fake.calls[0].user
     assert JudgeOutput.model_json_schema()["additionalProperties"] is False

@@ -117,6 +117,18 @@ class NvidiaTransport:
             raise self._error(response.status_code, payload, request.model)
         return self._parse(payload)
 
+    def list_models(self) -> list[str]:
+        """Return the model ids this key can use."""
+        url = self._models.base_url.rstrip("/") + "/models"
+        try:
+            response = self._client.get(url, headers={"Authorization": f"Bearer {self._key}"})
+        except httpx.TransportError as exc:
+            raise TransientError(f"network error: {type(exc).__name__}") from exc
+        payload = self._payload(response)
+        if response.status_code >= 400:
+            raise self._error(response.status_code, payload, "(list)")
+        return sorted(str(m["id"]) for m in payload.get("data", []) if "id" in m)
+
     def _body(self, request: LLMRequest, json_schema: dict[str, Any], mode: str) -> dict[str, Any]:
         system = request.system
         if mode == "none":
@@ -175,6 +187,11 @@ class NvidiaTransport:
             return UnsupportedModeError(f"API error {status}{text}")
         if status in TRANSIENT_STATUS or status >= 500:
             return TransientError(f"API error {status}{text}")
+        if status == 410:
+            return LLMError(
+                f"API error 410: model {model} has been retired{text}. "
+                "List live models with: story-agent models"
+            )
         if status in {401, 403}:
             return LLMError(f"API error {status}: the key was rejected{text}")
         if status == 404:

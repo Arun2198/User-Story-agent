@@ -253,7 +253,6 @@ def test_default_models_and_key_name_come_from_config(app_config: AppConfig) -> 
     models = app_config.models
     assert models.api_key_env == "NVIDIA_API_KEY"
     assert models.base_url.startswith("https://integrate.api.nvidia.com")
-    assert models.generator != models.judge
     assert set(models.prices) == {models.generator, models.judge}
 
 
@@ -430,7 +429,7 @@ def test_extra_body_is_merged_for_the_matching_model_only(app_config: AppConfig)
 
     t = transport(models, handler)
     t.send(request(models), SCHEMA)
-    t.send(LLMRequest("p", "sys", "user", models.judge), SCHEMA)
+    t.send(LLMRequest("p", "sys", "user", "some/other-model"), SCHEMA)
     assert seen[0]["chat_template_kwargs"] == {"enable_thinking": False}
     assert seen[0]["nvext"] == {"guided_json": SCHEMA, "max_thinking_tokens": 0}
     assert "chat_template_kwargs" not in seen[1]
@@ -450,3 +449,36 @@ def test_no_token_limit_is_sent_by_default_and_a_configured_one_is(app_config: A
     transport(capped, handler).send(request(capped), SCHEMA)
     assert "max_tokens" not in seen[0]
     assert seen[1]["max_tokens"] == 300
+
+
+# ---- retired models and the models command --------------------------------------------
+
+
+def test_a_retired_model_says_so_and_points_to_the_models_command(app_config: AppConfig) -> None:
+    body = {"detail": "The model 'x' has reached its end of life and is no longer available."}
+    t = transport(app_config.models, lambda _r: httpx.Response(410, json=body))
+    with pytest.raises(LLMError, match="has been retired") as info:
+        t.send(request(app_config.models), SCHEMA)
+    assert "story-agent models" in str(info.value)
+    assert not isinstance(info.value, TransientError)
+
+
+def test_list_models_returns_sorted_ids(app_config: AppConfig) -> None:
+    seen: dict[str, str] = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen["url"] = str(req.url)
+        seen["auth"] = req.headers["authorization"]
+        return httpx.Response(
+            200, json={"data": [{"id": "b/two"}, {"id": "a/one"}, {"object": "x"}]}
+        )
+
+    assert transport(app_config.models, handler).list_models() == ["a/one", "b/two"]
+    assert seen["url"].endswith("/v1/models")
+    assert seen["auth"] == "Bearer test-key"
+
+
+def test_list_models_reports_a_rejected_key(app_config: AppConfig) -> None:
+    t = transport(app_config.models, lambda _r: httpx.Response(401, json={"detail": "no"}))
+    with pytest.raises(LLMError, match="key was rejected"):
+        t.list_models()

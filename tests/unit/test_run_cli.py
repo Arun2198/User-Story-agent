@@ -16,6 +16,7 @@ from story_agent.evals.app.gold_model import GoldModel
 from story_agent.evals.cases import EvalCase, load_cases_dir
 from story_agent.interactive import PromptResponder, render_story
 from story_agent.memory.store import SqliteMemoryStore
+from story_agent.nvidia import NvidiaTransport
 from story_agent.responders import AnswersFileResponder, RunAnswers, load_run_answers
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -539,3 +540,27 @@ def test_a_paused_run_writes_nothing(tmp_path: Path) -> None:
     )
     assert result.exit_code == 3
     assert not out.exists()
+
+
+def test_models_command_lists_ids_and_checks_the_configured_ones(
+    monkeypatch: pytest.MonkeyPatch, app_config: AppConfig
+) -> None:
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    ids = ["other/model", app_config.models.generator, app_config.models.judge]
+    monkeypatch.setattr(NvidiaTransport, "list_models", lambda _self: sorted(ids))
+    ok = runner.invoke(app, ["models"])
+    assert ok.exit_code == 0, ok.output
+    assert f"generator: {app_config.models.generator} is available" in ok.output
+    only = runner.invoke(app, ["models", "--filter", "OTHER"])
+    assert "1 of 3 models" in only.output
+    monkeypatch.setattr(NvidiaTransport, "list_models", lambda _self: ["other/model"])
+    missing = runner.invoke(app, ["models"])
+    assert missing.exit_code == 1
+    assert "is NOT in the list" in missing.output
+
+
+def test_models_command_needs_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    result = runner.invoke(app, ["models"])
+    assert result.exit_code == 1
+    assert "NVIDIA_API_KEY is not set" in result.output
