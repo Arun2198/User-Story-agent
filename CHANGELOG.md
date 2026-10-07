@@ -7,6 +7,8 @@ All notable changes to this project are recorded here. The format follows
 ## [Unreleased]
 
 ### Changed
+- `scripts/setup_keys.sh` saves the NVIDIA keys privately and loads them, for machines where Codespaces secrets do not arrive.
+- The judge model is `nvidia/nemotron-3-ultra-550b-a55b` and can use its own key (`NVIDIA_API_KEY_JUDGE`). Token limits are off by default. `story-agent models` lists live model ids.
 - The model provider is now NVIDIA's hosted API through `NvidiaTransport`. The Anthropic transport, SDK dependency and key variable are removed. The key is `NVIDIA_API_KEY`; models, base URL and structured-output mode are in `config/models.yaml` (ADR 0012).
 
 ### Added

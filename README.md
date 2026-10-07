@@ -8,7 +8,7 @@ packs. Banking is the first pack.
 Status: phase 4 (draft, criteria, critique, review). The remaining
 stages arrive in later phases; see `STANDARDS.md` for what is enforced.
 
-New here? Read [docs/getting-started.md](docs/getting-started.md) first. To try it in the browser, open the repository in a GitHub Codespace (see Option A there).
+New here? Read [docs/getting-started.md](docs/getting-started.md) first. To try it in the browser, open the repository in a GitHub Codespace (see Option A there). To set your API keys on any machine, run `source scripts/setup_keys.sh`.
 
 ## Setup
 

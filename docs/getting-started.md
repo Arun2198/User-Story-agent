@@ -55,7 +55,18 @@ export NVIDIA_API_KEY="nvapi-..."            # macOS and Linux
 # PowerShell: $env:NVIDIA_API_KEY="nvapi-..."
 ```
 
-The setting lasts for that terminal window. Where the key goes, by setup:
+**The easiest way, on any machine, including a codespace where the GitHub secrets do not arrive:**
+
+```bash
+source scripts/setup_keys.sh
+```
+
+It asks for the key (and an optional second key for the judge) without showing what you type,
+saves them in a private file in your home folder (`~/.nvidia_env`, readable only by you, outside
+the repository), loads them into this terminal, and makes every new terminal load them too. It
+never prints a key. Run it again to replace a key. Delete `~/.nvidia_env` to remove them.
+
+The `export` line above does the same for one terminal window only. Where the key goes, by setup:
 
 | Where you run it | Where to put the key |
 |---|---|
