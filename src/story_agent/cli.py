@@ -14,8 +14,18 @@ from story_agent import runcmd
 from story_agent.config import ConfigError, default_config_dir, load_config
 from story_agent.discovery.packs import load_packs
 from story_agent.evals.cases import datasets_dir, load_case, save_case, validate_case
+from story_agent.evals.online.config import parse_online
+from story_agent.evals.online.drift import check_drift
+from story_agent.evals.online.feedback import extract_feedback
+from story_agent.evals.online.trace import assert_trace_safe, build_trace, read_events, to_otlp
 from story_agent.evals.report import to_json, to_markdown
-from story_agent.evals.runner import COMPONENTS, SuiteOptions, run_suite
+from story_agent.evals.runner import (
+    COMPONENTS,
+    PACKAGE_BASELINES,
+    SuiteOptions,
+    load_baseline,
+    run_suite,
+)
 from story_agent.memory.recall import is_stale
 from story_agent.memory.store import MemoryStoreError, SqliteMemoryStore, UnsafeContentError
 from story_agent.publish import PublishBlocked, apply_plan, approve, service
@@ -51,8 +61,10 @@ from story_agent.session import RunOutcome, Session, SessionError
 app = typer.Typer(no_args_is_help=True, help="Turn scenarios into user stories.")
 memory_app = typer.Typer(no_args_is_help=True, help="Inspect and manage saved memory.")
 evals_app = typer.Typer(no_args_is_help=True, help="Run and extend the evals.")
+online_app = typer.Typer(no_args_is_help=True, help="Traces, feedback and drift for finished runs.")
 app.add_typer(memory_app, name="memory")
 app.add_typer(evals_app, name="evals")
+app.add_typer(online_app, name="online")
 
 Workspace = Annotated[str, typer.Option("--workspace", "-w", help="Workspace name.")]
 MemoryDir = Annotated[
@@ -360,6 +372,80 @@ def publish_cmd(
     else:
         typer.echo(f"error: unknown target {target}; choose from {', '.join(TARGETS)}", err=True)
         raise typer.Exit(EXIT_ERROR)
+
+
+# ---- online -----------------------------------------------------------------------
+
+
+@online_app.command("trace")
+def online_trace(
+    run_id: str,
+    otlp: Annotated[bool, typer.Option("--otlp", help="Print OTLP/JSON instead.")] = False,
+    runs_dir: RunsDir = None,
+) -> None:
+    """Print the OpenTelemetry-compatible trace of a finished run."""
+    root = default_runs_dir(runs_dir)
+    try:
+        state, redactions = load_run(root, run_id)
+        trace = build_trace(state, read_events(root / run_id / "trace.jsonl"))
+        assert_trace_safe(trace, redactions)
+    except (FileNotFoundError, ValueError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    data = to_otlp(trace) if otlp else trace.model_dump(mode="json")
+    typer.echo(json.dumps(data, indent=2))
+
+
+@online_app.command("feedback")
+def online_feedback(run_id: str, runs_dir: RunsDir = None) -> None:
+    """Print the feedback signals of a finished run."""
+    root = default_runs_dir(runs_dir)
+    try:
+        state, _ = load_run(root, run_id)
+    except FileNotFoundError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    calls = len(read_events(root / run_id / "trace.jsonl"))
+    typer.echo(extract_feedback(state, calls).model_dump_json(indent=2))
+
+
+@online_app.command("drift")
+def online_drift(
+    runs_dir: RunsDir = None,
+    baseline_dir: Annotated[Path | None, typer.Option(help="Baseline directory.")] = None,
+) -> None:
+    """Compare recorded online runs with the offline baseline. Exit 1 on drift."""
+    root = default_runs_dir(runs_dir)
+    try:
+        config = load_config(default_config_dir())
+        online = parse_online(config.evals)
+    except ConfigError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    path = root / online.path
+    rows: list[dict[str, float]] = []
+    if path.exists():
+        rows = [
+            json.loads(line)["metrics"] for line in path.read_text(encoding="utf-8").splitlines()
+        ]
+    drift = online.drift
+    baseline = load_baseline(
+        baseline_dir or PACKAGE_BASELINES, drift.baseline_mode, drift.baseline_name
+    )
+    if baseline is None:
+        typer.echo(
+            f"no {drift.baseline_mode} baseline for {drift.baseline_name}; "
+            "run the evals with --live --update-baseline first"
+        )
+        raise typer.Exit(EXIT_OK)
+    report = check_drift(rows, baseline, drift)
+    if report.skipped:
+        typer.echo(f"not checked: {report.skipped}")
+        raise typer.Exit(EXIT_OK)
+    typer.echo(f"{report.runs} runs, {len(report.checked)} metrics checked")
+    for item in report.drifted:
+        typer.echo(f"DRIFT {item}")
+    raise typer.Exit(EXIT_ERROR if report.drifted else EXIT_OK)
 
 
 # ---- evals ---------------------------------------------------------------------
