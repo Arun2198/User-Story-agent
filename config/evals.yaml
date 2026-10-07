@@ -41,3 +41,13 @@ thresholds:
     default_coverage: { min: 1.0 }
     stale_default_flag_rate: { min: 1.0 }
     spurious_defaults: { max: 0 }
+  critic_checks:
+    precision: { min: 0.9 }
+    recall: { min: 0.9 }
+    clean_false_positive_rate: { max: 0.05 }
+  criteria_checks:
+    accuracy: { min: 0.9 }
+    vague_recall: { min: 0.9 }
+    invented_number_recall: { min: 1.0 }
+    malformed_recall: { min: 1.0 }
+    false_flag_rate: { max: 0.05 }

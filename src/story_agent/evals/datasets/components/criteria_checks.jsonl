@@ -1,0 +1,20 @@
+{"id": "crc-001", "split": "dev", "given": "a posted card transaction", "when": "the customer raises a dispute", "then": "a dispute case is created", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-002", "split": "holdout", "given": "a transaction posted exactly 10 days ago", "when": "the customer raises a dispute", "then": "the dispute is accepted", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-003", "split": "dev", "given": "a transaction posted more than 24 hours ago", "when": "the customer raises a dispute", "then": "the dispute is refused with the reason shown", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-004", "split": "holdout", "given": "a user", "when": "they pay within 96 hours", "then": "the payment is accepted", "known_numbers": ["24", "10"], "expected": "ungrounded_number"}
+{"id": "crc-005", "split": "dev", "given": "a limit of 5,000", "when": "the customer transfers 6,000", "then": "the transfer is blocked", "known_numbers": ["24", "10"], "expected": "ungrounded_number"}
+{"id": "crc-006", "split": "holdout", "given": "a signed-in customer", "when": "they open the page", "then": "it loads quickly", "known_numbers": ["24", "10"], "expected": "vague"}
+{"id": "crc-007", "split": "dev", "given": "a signed-in customer", "when": "they use the app", "then": "the experience is user-friendly", "known_numbers": ["24", "10"], "expected": "vague"}
+{"id": "crc-008", "split": "holdout", "given": "an account", "when": "statements are requested", "then": "it is handled appropriately", "known_numbers": ["24", "10"], "expected": "vague"}
+{"id": "crc-009", "split": "dev", "given": "an account", "when": "the user acts", "then": "the system responds efficiently", "known_numbers": ["24", "10"], "expected": "vague"}
+{"id": "crc-010", "split": "holdout", "given": "a signed-in customer", "when": "they request a statement", "then": "the statement is shown etc", "known_numbers": ["24", "10"], "expected": "vague"}
+{"id": "crc-011", "split": "dev", "given": "a payment", "when": "the customer retries", "then": "the payment is retried and the customer is told", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-012", "split": "holdout", "given": "", "when": "the customer acts", "then": "the result shows", "known_numbers": ["24", "10"], "expected": "malformed"}
+{"id": "crc-013", "split": "dev", "given": "a case", "when": "", "then": "the result shows", "known_numbers": ["24", "10"], "expected": "malformed"}
+{"id": "crc-014", "split": "holdout", "given": "a case", "when": "it opens", "then": "", "known_numbers": ["24", "10"], "expected": "malformed"}
+{"id": "crc-015", "split": "dev", "given": "Given a closed case.", "when": "When the holder opens it.", "then": "Then the outcome is shown.", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-016", "split": "holdout", "given": "a card ending in the placeholder", "when": "the customer disputes", "then": "a case is created", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-017", "split": "dev", "given": "a quick refund request", "when": "the agent refunds", "then": "the refund is posted", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-018", "split": "holdout", "given": "an account in good standing", "when": "the fast lane is requested", "then": "the request is rejected", "known_numbers": ["24", "10"], "expected": "vague"}
+{"id": "crc-019", "split": "dev", "given": "a deposit of 10 units", "when": "it posts", "then": "the balance rises", "known_numbers": ["24", "10"], "expected": "ok"}
+{"id": "crc-020", "split": "holdout", "given": "a deposit of 11 units", "when": "it posts", "then": "the balance rises", "known_numbers": ["24", "10"], "expected": "ungrounded_number"}

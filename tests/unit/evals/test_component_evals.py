@@ -1,6 +1,15 @@
+import pytest
+
 from story_agent.config import AppConfig
-from story_agent.evals.components import domain_detection, injection, redaction, scope_guard
+from story_agent.evals.components import (
+    domain_detection,
+    drafting,
+    injection,
+    redaction,
+    scope_guard,
+)
 from story_agent.evals.components.common import check_thresholds, load_cases, ratio, split_cases
+from story_agent.pipeline import critique
 
 
 def test_redaction_eval_meets_thresholds(app_config: AppConfig) -> None:
@@ -53,3 +62,28 @@ def test_a_broken_config_fails_the_gate(app_config: AppConfig) -> None:
     report = injection.run(strict)
     assert not report.thresholds_met
     assert report.failures
+
+
+def test_drafting_evals_meet_thresholds(app_config: AppConfig) -> None:
+    reports = drafting.run_all(app_config.evals, app_config.config_dir)
+    assert [r.name for r in reports] == ["critic_checks", "criteria_checks"]
+    for report in reports:
+        assert report.thresholds_met, (report.name, report.failures)
+
+
+def test_the_critic_eval_fails_if_duplicate_detection_is_removed(
+    app_config: AppConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(critique, "find_duplicates", lambda *_a, **_k: [])
+    report = drafting.critic_checks(app_config, app_config.evals, app_config.config_dir)
+    assert not report.thresholds_met
+    assert report.metrics["recall"] < 0.9
+
+
+def test_the_criteria_eval_fails_if_the_vague_list_is_empty(app_config: AppConfig) -> None:
+    broken = app_config.model_copy(
+        update={"standards": {**app_config.standards, "vague_terms": []}}
+    )
+    report = drafting.criteria_checks(broken, app_config.evals)
+    assert not report.thresholds_met
+    assert report.metrics["vague_recall"] == 0
