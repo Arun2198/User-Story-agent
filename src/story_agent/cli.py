@@ -10,6 +10,7 @@ from typing import Annotated
 
 import typer
 
+from story_agent import runcmd
 from story_agent.config import ConfigError, default_config_dir, load_config
 from story_agent.discovery.packs import load_packs
 from story_agent.evals.cases import datasets_dir, load_case, save_case, validate_case
@@ -17,10 +18,24 @@ from story_agent.evals.report import to_json, to_markdown
 from story_agent.evals.runner import COMPONENTS, SuiteOptions, run_suite
 from story_agent.memory.recall import is_stale
 from story_agent.memory.store import MemoryStoreError, SqliteMemoryStore, UnsafeContentError
+from story_agent.publish import PublishBlocked, apply_plan, approve, service
+from story_agent.publish.base import NotEnabledError
+from story_agent.publish.service import (
+    EXTERNAL_TARGETS,
+    FILE_TARGETS,
+    FORMAT_TARGETS,
+    TARGETS,
+    UnknownTargetError,
+    build_plan,
+    external_publisher,
+    load_run,
+    render_file,
+)
 from story_agent.runcmd import (
     EXIT_ERROR,
     EXIT_NO_TERMINAL,
     EXIT_OK,
+    EXIT_PAUSED,
     Chosen,
     NoTerminalError,
     build_runtime,
@@ -28,6 +43,7 @@ from story_agent.runcmd import (
     default_memory_dir,
     default_runs_dir,
     summarize,
+    write_private,
 )
 from story_agent.schema import MemoryEntry, MemoryType, Scenario, utcnow
 from story_agent.session import RunOutcome, Session, SessionError
@@ -202,6 +218,12 @@ def run_cmd(  # noqa: PLR0913, PLR0917  (CLI options)
     runs_dir: RunsDir = None,
     memory_dir: MemoryDir = None,
     no_memory: Annotated[bool, typer.Option("--no-memory", help="Do not use memory.")] = False,
+    out: Annotated[
+        Path | None, typer.Option("--out", help="Also write the stories here when the run ends.")
+    ] = None,
+    fmt: Annotated[
+        str | None, typer.Option("--format", help="md, csv (Azure DevOps import) or json.")
+    ] = None,
 ) -> None:
     """Turn a scenario into reviewed user stories."""
     root = default_runs_dir(runs_dir)
@@ -221,7 +243,20 @@ def run_cmd(  # noqa: PLR0913, PLR0917  (CLI options)
         outcome = session.start(scenario_model, chosen.responder)
     finally:
         session.rt.close()
+    if outcome.status == "done" and (out is not None or fmt is not None):
+        _export_after_run(outcome, fmt, out, root)
     _finish(outcome, chosen, root)
+
+
+def _export_after_run(outcome: RunOutcome, fmt: str | None, out: Path | None, root: Path) -> None:
+    """Write the finished run in the asked format. A problem here does not undo the run."""
+    state = outcome.state
+    wanted = fmt or (state.preferences.output_format if state else None) or "md"
+    target = FORMAT_TARGETS.get(wanted)
+    if target is None:
+        typer.echo(f"error: unknown format {wanted}; choose md, csv or json", err=True)
+        raise typer.Exit(EXIT_ERROR)
+    _publish_file(outcome.run_id, target, out, root)
 
 
 @app.command("resume")
@@ -250,6 +285,81 @@ def resume_cmd(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(EXIT_ERROR) from exc
     _finish(outcome, chosen, root)
+
+
+# ---- publish ---------------------------------------------------------------------
+
+
+def _publish_file(run_id: str, target: str, out: Path | None, root: Path) -> None:
+    try:
+        config = load_config(default_config_dir())
+        state, redactions = load_run(root, run_id)
+        rendered = render_file(state, config, target, redactions)
+    except (ConfigError, FileNotFoundError, PublishBlocked, UnknownTargetError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    if str(out) == "-":
+        typer.echo(rendered.text, nl=False)
+        return
+    path = out or root / run_id / f"stories.{rendered.extension}"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_private(path, rendered.text)
+    typer.echo(f"wrote {rendered.stories} stories to {path}")
+
+
+def _publish_external(run_id: str, target: str, dry_run: bool, root: Path) -> None:
+    try:
+        config = load_config(default_config_dir())
+        state, redactions = load_run(root, run_id)
+        plan, ctx = build_plan(state, config, target, redactions)
+    except (ConfigError, FileNotFoundError, PublishBlocked, UnknownTargetError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    if dry_run:
+        typer.echo(plan.to_json())
+        return
+    try:
+        client = service.make_rest_client(target, ctx)
+    except NotEnabledError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    if not runcmd.stdin_is_tty():
+        typer.echo(
+            "error: writing to an external system needs a person to approve it at a terminal. "
+            "Use --dry-run to see the payload.",
+            err=True,
+        )
+        raise typer.Exit(EXIT_NO_TERMINAL)
+    typer.echo(plan.to_json())
+    if not typer.confirm(f"Send these {len(plan.operations)} items to {target}?", default=False):
+        typer.echo("Nothing was sent.")
+        raise typer.Exit(EXIT_PAUSED)
+    publisher = external_publisher(target, ctx)
+    report = apply_plan(publisher, plan, client, approve(plan, os.environ.get("USER", "user")))
+    typer.echo(f"created {len(report.created)}, updated {len(report.updated)}")
+
+
+@app.command("publish")
+def publish_cmd(
+    run_id: Annotated[str, typer.Argument(help="A finished run.")],
+    target: Annotated[str, typer.Option("--target", help=f"One of: {', '.join(TARGETS)}.")] = "md",
+    out: Annotated[
+        Path | None, typer.Option("--out", help="Output file, or - for the terminal.")
+    ] = None,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="Print the exact payload for ado_rest or jira_rest.")
+    ] = False,
+    runs_dir: RunsDir = None,
+) -> None:
+    """Publish a finished run as a file, or prepare a write to Azure DevOps or Jira."""
+    root = default_runs_dir(runs_dir)
+    if target in FILE_TARGETS:
+        _publish_file(run_id, target, out, root)
+    elif target in EXTERNAL_TARGETS:
+        _publish_external(run_id, target, dry_run, root)
+    else:
+        typer.echo(f"error: unknown target {target}; choose from {', '.join(TARGETS)}", err=True)
+        raise typer.Exit(EXIT_ERROR)
 
 
 # ---- evals ---------------------------------------------------------------------

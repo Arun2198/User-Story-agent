@@ -502,3 +502,40 @@ def test_prompt_choices_are_enforced_and_gate_offers_only_valid_options(
     assert PromptResponder().respond(open_gate) == {"decision": "defer", "confirmed_by": "user"}
     assert "go" not in seen[0].split("[")[1]
     assert "more" not in seen[0]
+
+
+def test_run_can_write_the_stories_in_a_format_when_it_ends(tmp_path: Path) -> None:
+    out = tmp_path / "stories.csv"
+    result = run("--answers", str(answers_file(tmp_path)), "--format", "csv", "--out", str(out))
+    assert result.exit_code == 0, result.output
+    header = out.read_text(encoding="utf-8").splitlines()[0]
+    assert header.startswith("Work Item Type,Title 1,Title 2,Title 3")
+    assert "wrote" in result.output
+
+
+def test_run_uses_the_format_from_a_free_text_preference(tmp_path: Path) -> None:
+    out = tmp_path / "stories.out"
+    path = answers_file(tmp_path, free_text="Please give me the output as json.")
+    result = run("--answers", str(path), "--out", str(out))
+    assert result.exit_code == 0, result.output
+    assert json.loads(out.read_text(encoding="utf-8"))["run_id"]
+
+
+def test_run_rejects_an_unknown_format(tmp_path: Path) -> None:
+    result = run("--answers", str(answers_file(tmp_path)), "--format", "pdf")
+    assert result.exit_code == 1
+    assert "unknown format" in result.output
+
+
+def test_a_paused_run_writes_nothing(tmp_path: Path) -> None:
+    out = tmp_path / "stories.md"
+    result = run(
+        "--answers",
+        str(answers_file(tmp_path, go_ahead=False)),
+        "--format",
+        "md",
+        "--out",
+        str(out),
+    )
+    assert result.exit_code == 3
+    assert not out.exists()

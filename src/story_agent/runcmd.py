@@ -35,6 +35,13 @@ def stdin_is_tty() -> bool:
     return sys.stdin.isatty()
 
 
+def write_private(path: Path, text: str) -> None:
+    """Write a file readable by its owner only."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(text)
+
+
 def make_transport(config: AppConfig) -> Transport:
     """Return the real model transport. The key comes from the environment only."""
     return AnthropicTransport(get_api_key(), config.models)
