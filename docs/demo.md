@@ -74,15 +74,34 @@ If the model is overloaded (`API error 503`), the tool retries, and if it gives 
 
 ## 7. Get the stories out
 
+Everything for a run is saved in `runs/<run id>/` (in a Codespace:
+`/workspaces/User-Story-agent/runs/`). The run id is printed at the start and end of a run.
+
 ```bash
-uv run story-agent run "<scenario>" --workspace demo --out stories.md   # write when the run ends
-uv run story-agent publish <run id> --target md --out stories.md
-uv run story-agent publish <run id> --target json --out stories.json
+ls runs/                  # find your run id (the newest folder)
+```
+
+Create the export file with `publish`. A run must be finished.
+
+```bash
+uv run story-agent publish <run id> --target json --out stories.json    # JSON
+uv run story-agent publish <run id> --target md --out stories.md        # readable document
 uv run story-agent publish <run id> --target ado_csv --out stories.csv  # Azure DevOps import
 uv run story-agent publish <run id> --target jira_rest --dry-run        # shows the payload only
 ```
 
-The run id is printed at the start and end of a run, and saved runs are in `runs/`.
+Leave out `--out` to save to `runs/<run id>/stories.<ext>`, or use `--out -` to print it in the
+terminal. To create the file as part of the run itself, add `--format json --out stories.json`
+to the `run` command.
+
+| File | What it is |
+|---|---|
+| `runs/<run id>/stories.json` | The final JSON, after `publish --target json` |
+| `runs/<run id>/state.json` | Everything the run produced |
+| `runs/<run id>/checkpoint.sqlite` | The saved progress, used by `resume` |
+
+In a Codespace, `runs/` is deleted with the codespace. Download the export first: in VS Code,
+right-click the file in the Explorer and choose Download.
 
 ## 8. Show memory (run the scenario a second time)
 

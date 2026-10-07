@@ -132,6 +132,7 @@ Write the result while you run, or later:
 ```bash
 uv run story-agent run "..." --format md --out stories.md
 uv run story-agent publish run-20261007-101500-3fa2 --target md
+uv run story-agent publish run-20261007-101500-3fa2 --target json --out stories.json
 uv run story-agent publish run-20261007-101500-3fa2 --target ado_csv --out import.csv
 ```
 
@@ -143,7 +144,7 @@ print the requests they would send (`--dry-run`); they cannot write yet.
 | Path | What it holds |
 |---|---|
 | `runs/<run id>/state.json` | The finished run |
-| `runs/<run id>/stories.md` | Output from `publish` |
+| `runs/<run id>/stories.md`, `stories.json` | Output from `publish` (the extension follows `--target`) |
 | `runs/<run id>/checkpoint.sqlite` | The saved position, so `resume` works |
 | `runs/<run id>/redaction_map.json` | Placeholders and the original values they replaced |
 | `runs/<run id>/trace.jsonl` | One line per model call: ids, hashes, tokens, cost |
