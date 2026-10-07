@@ -3,12 +3,13 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import httpx2 as httpx
 import pytest
 import typer
 import yaml
 from typer.testing import CliRunner
 
-from story_agent import runcmd
+from story_agent import cli, runcmd
 from story_agent.cli import app
 from story_agent.config import AppConfig, ConfigError, load_config
 from story_agent.discovery.packs import PackSet
@@ -584,3 +585,72 @@ def test_models_command_checks_the_judge_against_the_judge_key(
     assert f"judge: {models.judge} (key NVIDIA_API_KEY_JUDGE) is available" in result.output
     assert f"generator: {models.generator} (key NVIDIA_API_KEY) is available" in result.output
     assert models.judge in asked
+
+
+# ---- check ----------------------------------------------------------------------------------
+
+
+def stub_transport(monkeypatch: pytest.MonkeyPatch, handler: Any, **update: Any) -> None:
+    config = load_config(ROOT / "config")
+    models = config.models.model_copy(update=update)
+
+    def build(trial: Any, env: Any = None) -> NvidiaTransport:
+        client = httpx.Client(transport=httpx.MockTransport(handler))
+        return NvidiaTransport("test-key", trial, client)
+
+    monkeypatch.setattr(cli, "transport_from_env", build)
+    monkeypatch.setattr(cli, "load_config", lambda _d: config.model_copy(update={"models": models}))
+
+
+def ok_reply(tokens: int = 7) -> dict[str, Any]:
+    return {
+        "choices": [{"message": {"content": '{"ok": true}'}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 5, "completion_tokens": tokens},
+    }
+
+
+def test_check_reports_time_and_tokens_for_each_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_transport(monkeypatch, lambda _r: httpx.Response(200, json=ok_reply(9)))
+    result = runner.invoke(app, ["check"])
+    assert result.exit_code == 0, result.output
+    assert "generator:" in result.output
+    assert "judge:" in result.output
+    assert "9 output tokens" in result.output
+    assert "structured output mode guided_json" in result.output
+
+
+def test_check_fails_with_the_reason_when_a_model_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_transport(monkeypatch, lambda _r: httpx.Response(410, json={"detail": "end of life"}))
+    result = runner.invoke(app, ["check"])
+    assert result.exit_code == 1
+    assert "FAILED" in result.output
+    assert "has been retired" in result.output
+
+
+def test_probe_thinking_suggests_the_setting_that_saves_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def handler(req: httpx.Request) -> httpx.Response:
+        body = json.loads(req.content)
+        quiet = body.get("chat_template_kwargs") == {"enable_thinking": False}
+        return httpx.Response(200, json=ok_reply(6 if quiet else 400))
+
+    stub_transport(monkeypatch, handler, structured_output="guided_json")
+    result = runner.invoke(app, ["check", "--probe-thinking"])
+    assert "Trying thinking-off settings" in result.output
+    assert "no extra settings: " in result.output
+    assert "400 output tokens" in result.output
+    assert '"enable_thinking": false' in result.output.split("put this in config/models.yaml")[-1]
+    assert "extra_body:" in result.output
+
+
+def test_probe_thinking_says_when_nothing_helps(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_transport(monkeypatch, lambda _r: httpx.Response(200, json=ok_reply(300)))
+    result = runner.invoke(app, ["check", "--probe-thinking"])
+    assert "No setting made a difference" in result.output
+
+
+def test_probe_thinking_reports_a_rejected_setting(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_transport(monkeypatch, lambda _r: httpx.Response(400, json={"detail": "bad field"}))
+    result = runner.invoke(app, ["check", "--probe-thinking"])
+    assert "FAILED" in result.output

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -86,7 +87,11 @@ class NoTerminalError(ConfigError):
 
 
 def build_runtime(
-    config_dir: Path | None, runs_dir: Path, memory_dir: Path | None, use_memory: bool
+    config_dir: Path | None,
+    runs_dir: Path,
+    memory_dir: Path | None,
+    use_memory: bool,
+    progress: Callable[[str], None] | None = None,
 ) -> Runtime:
     """Wire the real model, response cache, hooks and memory directory."""
     config = load_config(config_dir or default_config_dir())
@@ -96,14 +101,19 @@ def build_runtime(
     cache_path = runs_dir / "response_cache.sqlite"
     cache = SqliteCache(cache_path)
     cache_path.chmod(0o600)
-    client = StructuredClient(transport, config.models, cache)
+    say = progress or (lambda _message: None)
+
+    def retrying(attempt: int, error: Exception, delay: float) -> None:
+        say(f"  the model call failed ({error}); retry {attempt} in {delay:.0f}s")
+
+    client = StructuredClient(transport, config.models, cache, on_retry=retrying)
     prompts_dir = (config_dir or default_config_dir()).parent / "prompts"
     deps = StageDeps(client, config, packs, prompts_dir)
     pipeline = build_pipeline(config.hooks, default_registry())
     online = build_online_evaluator(
         config.evals, runs_dir, lambda state: judge_run(client, config, prompts_dir, state)
     )
-    runtime = Runtime(deps, pipeline, runs_dir, memory_dir if use_memory else None, online)
+    runtime = Runtime(deps, pipeline, runs_dir, memory_dir if use_memory else None, online, say)
     runtime.on_close.append(cache.close)
     return runtime
 

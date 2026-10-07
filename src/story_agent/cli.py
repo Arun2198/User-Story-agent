@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
 from story_agent import runcmd
-from story_agent.config import ConfigError, default_config_dir, load_config
+from story_agent.config import ConfigError, ModelsConfig, default_config_dir, load_config
 from story_agent.discovery.packs import load_packs
 from story_agent.evals.cases import datasets_dir, load_case, save_case, validate_case
 from story_agent.evals.online.config import parse_online
@@ -26,10 +27,10 @@ from story_agent.evals.runner import (
     load_baseline,
     run_suite,
 )
-from story_agent.llm import LLMError
+from story_agent.llm import LLMError, LLMRequest
 from story_agent.memory.recall import is_stale
 from story_agent.memory.store import MemoryStoreError, SqliteMemoryStore, UnsafeContentError
-from story_agent.nvidia import transport_from_env
+from story_agent.nvidia import THINKING_OFF_CANDIDATES, NvidiaTransport, transport_from_env
 from story_agent.publish import PublishBlocked, apply_plan, approve, service
 from story_agent.publish.base import NotEnabledError
 from story_agent.publish.service import (
@@ -60,6 +61,11 @@ from story_agent.runcmd import (
 from story_agent.schema import MemoryEntry, MemoryType, Scenario, utcnow
 from story_agent.session import RunOutcome, Session, SessionError
 
+CHECK_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"ok": {"type": "boolean"}},
+    "required": ["ok"],
+}
 app = typer.Typer(no_args_is_help=True, help="Turn scenarios into user stories.")
 memory_app = typer.Typer(no_args_is_help=True, help="Inspect and manage saved memory.")
 evals_app = typer.Typer(no_args_is_help=True, help="Run and extend the evals.")
@@ -240,6 +246,81 @@ def models_cmd(
         raise typer.Exit(EXIT_ERROR)
 
 
+@app.command("check")
+def check_cmd(
+    probe_thinking: Annotated[
+        bool,
+        typer.Option(
+            "--probe-thinking",
+            help="Also try request settings that may switch a reasoning model's thinking off.",
+        ),
+    ] = False,
+) -> None:
+    """Send one tiny request to each configured model and report how long it takes."""
+    try:
+        config = load_config(default_config_dir())
+        transport = transport_from_env(config.models)
+    except ConfigError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(EXIT_ERROR) from exc
+    failed = False
+    for role in dict.fromkeys(("generator", "judge")):
+        model = getattr(config.models, role)
+        result = _timed(transport, model)
+        typer.echo(f"{role}: {model}: {result}")
+        failed = failed or result.startswith("FAILED")
+    if probe_thinking:
+        _probe_thinking(config.models, config.models.generator)
+    raise typer.Exit(EXIT_ERROR if failed else EXIT_OK)
+
+
+def _timed(transport: NvidiaTransport, model: str) -> str:
+    request = LLMRequest("check", "Return JSON only.", 'Reply with {"ok": true}.', model)
+    started = time.monotonic()
+    try:
+        raw = transport.send(request, CHECK_SCHEMA)
+    except LLMError as exc:
+        return f"FAILED after {time.monotonic() - started:.0f}s: {exc}"
+    seconds = time.monotonic() - started
+    return (
+        f"ok in {seconds:.1f}s, {raw.usage.output_tokens} output tokens, "
+        f"structured output mode {transport.modes.get(model, 'fixed')}"
+    )
+
+
+def _probe_thinking(models: ModelsConfig, model: str) -> None:
+    typer.echo(f"\nTrying thinking-off settings on {model} (each is one small request):")
+    rows: list[tuple[int, float, dict[str, Any]]] = []
+    for extra in ({}, *THINKING_OFF_CANDIDATES):
+        trial = models.model_copy(update={"extra_body": {model: extra} if extra else {}})
+        started = time.monotonic()
+        try:
+            raw = transport_from_env(trial).send(
+                LLMRequest("check", "Return JSON only.", 'Reply with {"ok": true}.', model),
+                CHECK_SCHEMA,
+            )
+        except LLMError as exc:
+            typer.echo(f"  {json.dumps(extra) if extra else 'no extra settings'}: FAILED: {exc}")
+            continue
+        seconds = time.monotonic() - started
+        typer.echo(
+            f"  {json.dumps(extra) if extra else 'no extra settings'}: "
+            f"{seconds:.1f}s, {raw.usage.output_tokens} output tokens, "
+            f"{'valid JSON' if raw.data.get('ok') is True else 'no usable JSON'}"
+        )
+        if raw.data.get("ok") is True:
+            rows.append((raw.usage.output_tokens, seconds, extra))
+    best = min((r for r in rows if r[2]), default=None, key=lambda r: r[0])
+    base = next((r for r in rows if not r[2]), None)
+    if best and (base is None or best[0] < base[0]):
+        typer.echo(
+            "\nThe fewest tokens came from this setting. To use it, put this in config/models.yaml:"
+        )
+        typer.echo(f"extra_body:\n  {model}: {json.dumps(best[2])}")
+    else:
+        typer.echo("\nNo setting made a difference. Consider a model that does not think.")
+
+
 # ---- run and resume --------------------------------------------------------------
 
 Answers = Annotated[
@@ -252,6 +333,11 @@ Answers = Annotated[
 RunsDir = Annotated[
     Path | None, typer.Option("--runs-dir", help="Where runs are saved (STORY_AGENT_RUNS_DIR).")
 ]
+
+
+def _say(message: str) -> None:
+    """Show progress on the error stream so output files and pipes stay clean."""
+    typer.echo(message, err=True)
 
 
 def _finish(outcome: RunOutcome, chosen: Chosen, runs_dir: Path) -> None:
@@ -283,7 +369,9 @@ def run_cmd(  # noqa: PLR0913, PLR0917  (CLI options)
         chosen = choose_responder(answers)
         scenario_model = Scenario(text=scenario, notes=notes, workspace=workspace)
         session = Session(
-            build_runtime(default_config_dir(), root, default_memory_dir(memory_dir), not no_memory)
+            build_runtime(
+                default_config_dir(), root, default_memory_dir(memory_dir), not no_memory, _say
+            )
         )
     except NoTerminalError as exc:
         typer.echo(f"error: {exc}", err=True)
@@ -324,7 +412,9 @@ def resume_cmd(
     try:
         chosen = choose_responder(answers)
         session = Session(
-            build_runtime(default_config_dir(), root, default_memory_dir(memory_dir), not no_memory)
+            build_runtime(
+                default_config_dir(), root, default_memory_dir(memory_dir), not no_memory, _say
+            )
         )
         try:
             outcome = session.resume(run_id, chosen.responder)

@@ -114,6 +114,7 @@ class Flow:
     usage: Usage = field(default_factory=Usage)
     cost_usd: float = 0.0
     requests: list[LLMRequest] = field(default_factory=list)
+    progress: Callable[[str], None] = field(default=lambda _message: None, repr=False)
 
     @classmethod
     def start(  # noqa: PLR0913, PLR0917  (a run needs these inputs)
@@ -125,6 +126,7 @@ class Flow:
         runs_dir: Path | None = None,
         memory: MemoryStore | None = None,
         redactions: Mapping[str, str] | None = None,
+        progress: Callable[[str], None] | None = None,
     ) -> Flow:
         """Create a run. ``redactions`` continues numbering when a run is resumed."""
         services = HookServices(
@@ -135,23 +137,29 @@ class Flow:
             memory=memory,
         )
         state = RunState(run_id=run_id, scenario=scenario)
-        return cls(deps, pipeline, services, state, memory)
+        flow = cls(deps, pipeline, services, state, memory)
+        if progress is not None:
+            flow.progress = progress
+        return flow
 
     @classmethod
-    def restore(
+    def restore(  # noqa: PLR0913, PLR0917  (the pieces of a run)
         cls,
         deps: StageDeps,
         pipeline: HookPipeline,
         state: RunState,
         runs_dir: Path | None = None,
         memory: MemoryStore | None = None,
+        progress: Callable[[str], None] | None = None,
     ) -> Flow:
         """Rebuild a flow from saved run state, for a resumed or checkpointed run."""
         mapping: dict[str, str] = {}
         saved = runs_dir / state.run_id / "redaction_map.json" if runs_dir else None
         if saved is not None and saved.exists():
             mapping = json.loads(saved.read_text(encoding="utf-8"))
-        flow = cls.start(deps, pipeline, state.scenario, state.run_id, runs_dir, memory, mapping)
+        flow = cls.start(
+            deps, pipeline, state.scenario, state.run_id, runs_dir, memory, mapping, progress
+        )
         flow.state = state
         if state.discovery is not None:
             found = state.discovery
@@ -179,9 +187,11 @@ class Flow:
     ) -> T:
         ctx = self._ctx(stage)
         self.pipeline.enforce(HookPhase.PRE, "component", ctx)
+        self.progress(f"{stage}: working ...")
         started = time.monotonic()
         result = run()
         latency = round(time.monotonic() - started, 3)
+        self.progress(f"{stage}: done in {latency:.0f}s")
         used, cost = usage(result)
         reqs = list(requests(result))
         self.usage = Usage(

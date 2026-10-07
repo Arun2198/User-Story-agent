@@ -218,6 +218,7 @@ plumbing work, not how good the real model's stories are. Only `--live` tests th
 | `Paused: ...` and a `resume` hint | The run is saved. Fix what it names and run `resume` |
 | `I can only turn scenarios into user stories...` | The request was judged out of scope. Describe a need or process, not a question |
 | `API error 410 ... has been retired` | The configured model id is gone. Run `uv run story-agent models`, then put a listed id in `generator` and `judge` in `config/models.yaml` |
+| It prints progress lines like `discover: working ...` and then seems stuck | A reasoning model can take minutes per call. A line such as `the model call failed (the request timed out); retry 1` means a call timed out and is being retried. Run `uv run story-agent check` to time each model, and `uv run story-agent check --probe-thinking` to find a setting that makes it answer quickly |
 | `model stopped with length while thinking` | The model is a reasoning model and used its token budget thinking. Turn its thinking off with `extra_body` in `config/models.yaml`, set `max_tokens`, or choose a different model |
 | `error: run ... has not finished` | `publish` needs a finished run. `resume` it first |
 | A story count of zero or a block message | A guardrail stopped the run. The message names the reason |

@@ -112,23 +112,30 @@ def call_cost(models: ModelsConfig, model: str, usage: Usage) -> float:
     return (usage.input_tokens * price.input + usage.output_tokens * price.output) / 1_000_000
 
 
-def retry_transient(
+def retry_transient(  # noqa: PLR0913, PLR0917  (a retry policy has these knobs)
     fn: Callable[[], RawResponse],
     max_retries: int,
     base_s: float,
     sleep: Callable[[float], None] = time.sleep,
     rng: random.Random | None = None,
+    on_retry: Callable[[int, TransientError, float], None] | None = None,
 ) -> RawResponse:
-    """Call ``fn``, retrying TransientError with exponential backoff and jitter."""
+    """Call ``fn``, retrying TransientError with exponential backoff and jitter.
+
+    ``on_retry(attempt, error, delay_s)`` is called before each wait, so a caller can say so.
+    """
     # Backoff jitter only, so a plain PRNG is fine.
     rand = rng or random.Random()  # noqa: S311  # nosec B311
     for attempt in range(max_retries + 1):
         try:
             return fn()
-        except TransientError:
+        except TransientError as exc:
             if attempt == max_retries:
                 raise
-            sleep(base_s * (2**attempt) * (0.5 + rand.random() / 2))
+            delay = base_s * (2**attempt) * (0.5 + rand.random() / 2)
+            if on_retry is not None:
+                on_retry(attempt + 1, exc, delay)
+            sleep(delay)
     raise AssertionError("unreachable")  # pragma: no cover
 
 
@@ -141,8 +148,10 @@ class StructuredClient:
         models: ModelsConfig,
         cache: ResponseCache | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        on_retry: Callable[[int, TransientError, float], None] | None = None,
     ) -> None:
         """Wire the transport, config and optional cache."""
+        self._on_retry = on_retry
         self._transport = transport
         self._models = models
         self._cache = cache
@@ -200,4 +209,5 @@ class StructuredClient:
             self._models.max_retries,
             self._models.backoff_base_s,
             self._sleep,
+            on_retry=self._on_retry,
         )

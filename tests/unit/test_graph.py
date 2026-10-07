@@ -458,3 +458,16 @@ def test_a_failure_mid_run_resumes_from_the_last_finished_stage(
     outcome = finished(session.resume("run-crash", SimulatedResponder(SimulatedUser(case))))
     assert outcome.state is not None
     assert outcome.state.stories
+
+
+def test_progress_is_reported_for_each_stage(
+    app_config: AppConfig, packs: PackSet, tmp_path: Path
+) -> None:
+    case = CASES["bk-card-dispute"]
+    messages: list[str] = []
+    session = make_session(case, app_config, packs, tmp_path)
+    session.rt.progress = messages.append
+    session.start(scenario_of(case), Scripted(), "run-prog")
+    stages = [m.split(":")[0] for m in messages if m.endswith("working ...")]
+    assert stages[:3] == ["scope_check", "discover", "clarify"]
+    assert any(m.startswith("discover: done in ") for m in messages)

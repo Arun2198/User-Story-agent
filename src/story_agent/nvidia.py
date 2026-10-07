@@ -248,3 +248,14 @@ def transport_from_env(
         if source.get(name, "").strip()
     }
     return NvidiaTransport(get_api_key(models.api_key_env, source), models, model_keys=own)
+
+
+# Request fields that some reasoning models use to skip or shorten their thinking. Which one a
+# model understands is not documented in one place, so `story-agent check --probe-thinking`
+# tries each and reports what changed.
+THINKING_OFF_CANDIDATES: tuple[dict[str, Any], ...] = (
+    {"chat_template_kwargs": {"enable_thinking": False}},
+    {"nvext": {"max_thinking_tokens": 0}},
+    {"chat_template_kwargs": {"thinking": False}},
+    {"reasoning_effort": "low"},
+)

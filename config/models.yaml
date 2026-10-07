@@ -26,7 +26,8 @@ judge: nvidia/nemotron-3-ultra-550b-a55b
 # Per-call output limit. null sends none, so the server's default applies and a reasoning
 # model is not cut off while it thinks. Set a number to cap every call.
 max_tokens: null
-timeout_s: 120
+# Reasoning models can take minutes to answer. A call is retried max_retries times after a timeout.
+timeout_s: 600
 max_retries: 3
 backoff_base_s: 1.0
 # Nominal USD per million tokens, used only for the cost budget and cost metrics. The hosted

@@ -64,6 +64,7 @@ class Runtime:
     runs_dir: Path
     memory_dir: Path | None = None
     online: OnlineEvaluator = field(default_factory=NullEvaluator)
+    progress: Callable[[str], None] = field(default=lambda _message: None, repr=False)
     on_close: list[Callable[[], None]] = field(default_factory=list)
     _stores: dict[str, SqliteMemoryStore] = field(default_factory=dict)
 
@@ -174,7 +175,9 @@ class RunGraph:
     def _flow(self, gs: GraphState) -> Flow:
         state = RunState.model_validate(gs["run"])
         memory = self.rt.memory_for(state.scenario.workspace)
-        return Flow.restore(self.rt.deps, self.rt.pipeline, state, self.rt.runs_dir, memory)
+        return Flow.restore(
+            self.rt.deps, self.rt.pipeline, state, self.rt.runs_dir, memory, self.rt.progress
+        )
 
     @staticmethod
     def _save(

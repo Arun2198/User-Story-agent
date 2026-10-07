@@ -169,3 +169,25 @@ def test_recording_roundtrip(tmp_path: Path, app_config: AppConfig) -> None:
     replay = FakeTransport(recorded=load_recordings(path))
     out = StructuredClient(replay, app_config.models).complete(_req(), Out)
     assert out.value.answer == "rec"
+
+
+def test_retry_notices_say_which_attempt_and_how_long() -> None:
+    notices: list[tuple[int, str, float]] = []
+    calls = {"n": 0}
+
+    def flaky() -> RawResponse:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise TransientError("the request timed out")
+        return RawResponse({})
+
+    retry_transient(
+        flaky,
+        3,
+        1.0,
+        sleep=lambda _s: None,
+        on_retry=lambda attempt, exc, delay: notices.append((attempt, str(exc), delay)),
+    )
+    assert [n[0] for n in notices] == [1, 2]
+    assert notices[0][1] == "the request timed out"
+    assert all(n[2] > 0 for n in notices)
