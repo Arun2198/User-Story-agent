@@ -340,4 +340,5 @@ class EvalReport(_Model):
     metrics: dict[str, float] = Field(default_factory=dict)
     thresholds_met: bool = True
     failures: list[str] = Field(default_factory=list)
+    details: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=utcnow)

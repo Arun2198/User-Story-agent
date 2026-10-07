@@ -58,6 +58,14 @@ class GroundingConfig(_Cfg):
     """Grounding verifier settings."""
 
     fuzzy_min_ratio: float = Field(ge=0.0, le=1.0)
+    min_excerpt_chars: int = Field(default=8, ge=1)
+    fuzzy_min_words: int = Field(default=4, ge=1)
+
+
+class ScopeConfig(_Cfg):
+    """Scope guard settings."""
+
+    refusal_message: str
 
 
 class RedactionConfig(_Cfg):
@@ -72,6 +80,7 @@ class GuardrailsConfig(_Cfg):
     budget: BudgetConfig
     limits: LimitsConfig
     grounding: GroundingConfig
+    scope: ScopeConfig
     redaction: RedactionConfig = Field(default_factory=RedactionConfig)
 
 

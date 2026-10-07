@@ -43,3 +43,10 @@ def stage_logger(run_id: str, stage: str) -> logging.LoggerAdapter[logging.Logge
     return logging.LoggerAdapter(
         logging.getLogger("story_agent"), {"run_id": run_id, "stage": stage}
     )
+
+
+def log_event(run_id: str, stage: str, msg: str, **fields: object) -> None:
+    """Emit one structured record. ``fields`` must not contain raw user text or PII."""
+    logging.getLogger("story_agent").info(
+        msg, extra={"run_id": run_id, "stage": stage, "fields": fields}
+    )

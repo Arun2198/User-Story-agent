@@ -7,5 +7,11 @@ limits:
   max_notes_chars: 4000
 grounding:
   fuzzy_min_ratio: 0.92
+  min_excerpt_chars: 8
+  fuzzy_min_words: 4
+scope:
+  refusal_message: >-
+    I can only turn scenarios into user stories, answer clarification questions,
+    refine or export stories, and manage saved memory. I can't help with that request.
 redaction:
   restore_in_outputs: false
