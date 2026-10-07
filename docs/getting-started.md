@@ -258,6 +258,29 @@ by itself. Good for trying it without installing anything.
 5. **Run it.** Use it exactly as in Part 1, from step 5. The terminal is a real terminal, so the
    questions and review prompts work.
 
+#### Open the codespace in VS Code
+
+You can use the codespace from your own VS Code instead of the browser. Your files stay in the
+codespace; VS Code is only the window.
+
+1. **Install the extension.** In VS Code open Extensions (Ctrl+Shift+X, or Cmd+Shift+X on Mac),
+   search for **GitHub Codespaces** and install it. Install VS Code first from code.visualstudio.com
+   if you do not have it.
+2. **Sign in to GitHub.** Open the Command Palette (Ctrl+Shift+P, or Cmd+Shift+P) and run
+   `GitHub Codespaces: Sign In` (or use the Accounts icon at the bottom left), then allow the
+   browser prompt.
+3. **Connect.** Run `Codespaces: Connect to Codespace` and pick your codespace from the list. To
+   make a new one, run `Codespaces: Create New Codespace`, choose `Arun2198/User-Story-agent`
+   and the branch.
+4. **From the browser instead.** On github.com/codespaces, open the menu beside the codespace and
+   choose "Open in Visual Studio Code". The first time, allow the browser to open VS Code.
+5. **Use the terminal.** Open it with Ctrl+` (backtick), then run the steps in `docs/demo.md`.
+   Run `source scripts/setup_keys.sh` there to set your keys.
+
+If the connection fails or the page stays on "Setting up your codespace", run
+`Codespaces: View Creation Log` from the Command Palette, or try another browser. If a newly
+created codespace has no key, use the setup script instead of waiting for secrets.
+
 Things to know:
 
 - **Cost and data.** The codespace is on GitHub's servers. Its disk holds `runs/` and `memory/`,

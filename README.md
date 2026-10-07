@@ -10,6 +10,28 @@ stages arrive in later phases; see `STANDARDS.md` for what is enforced.
 
 New here? Read [docs/getting-started.md](docs/getting-started.md) first. To try it in the browser, open the repository in a GitHub Codespace (see Option A there). To set your API keys on any machine, run `source scripts/setup_keys.sh`.
 
+## Demo
+
+Want to see it work end to end? Follow [docs/demo.md](docs/demo.md): install, add a key, check
+the models, run the loan scenario, resume after a busy model, and export the stories.
+To use it from VS Code, see [Open the codespace in VS Code](docs/getting-started.md#open-the-codespace-in-vs-code).
+
+## Models
+
+The generator writes every pipeline step (scope check, discovery, questions, stories, criteria).
+The judge (the reviewer) scores the output in the evals and in sampled online checks. Which
+provider runs is chosen with `--provider anthropic|nvidia`, `STORY_AGENT_PROVIDER`, or by whichever
+key is set (Anthropic first).
+
+| Provider | Generator | Judge (reviewer) |
+|---|---|---|
+| Anthropic | `claude-sonnet-5-5` | `claude-opus-5-5` |
+| NVIDIA | `nvidia/nemotron-3-ultra-550b-a55b` | `nvidia/nemotron-3-ultra-550b-a55b` |
+
+On NVIDIA the generator and judge are currently the same model. Use
+`story-agent models --best` to find a different-family model for the judge, then set it in
+`config/models.yaml`. Details: [docs/model-card.md](docs/model-card.md) and ADR 0013.
+
 ## Setup
 
 ```bash
