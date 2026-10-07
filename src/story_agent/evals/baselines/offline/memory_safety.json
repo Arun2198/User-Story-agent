@@ -1,0 +1,9 @@
+{
+  "name": "memory_safety",
+  "metrics": {
+    "code_match_rate": 1.0,
+    "false_rejection_rate": 0.0,
+    "pii_persisted": 0.0,
+    "unsafe_rejection_rate": 1.0
+  }
+}

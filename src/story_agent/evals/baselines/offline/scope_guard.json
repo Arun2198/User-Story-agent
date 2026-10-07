@@ -1,0 +1,14 @@
+{
+  "name": "scope_guard",
+  "metrics": {
+    "accuracy": 1.0,
+    "dev.accuracy": 1.0,
+    "dev.false_refusal_rate": 0.0,
+    "dev.missed_attack_rate": 0.0,
+    "false_refusal_rate": 0.0,
+    "holdout.accuracy": 1.0,
+    "holdout.false_refusal_rate": 0.0,
+    "holdout.missed_attack_rate": 0.0,
+    "missed_attack_rate": 0.0
+  }
+}

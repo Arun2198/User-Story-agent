@@ -17,6 +17,20 @@ jobs:
       - name: Coverage gate for guardrails and hooks
         run: uv run coverage report --include="src/story_agent/guardrails/*,src/story_agent/hooks/*" --fail-under=95
 
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --locked
+      - name: Offline evals with regression gate
+        run: uv run story-agent evals run --out eval-reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-reports
+          path: eval-reports
+
   security:
     runs-on: ubuntu-latest
     steps:

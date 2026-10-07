@@ -1,0 +1,9 @@
+{
+  "name": "memory_effect",
+  "metrics": {
+    "default_coverage": 1.0,
+    "question_reduction": 0.1667,
+    "spurious_defaults": 0.0,
+    "stale_default_flag_rate": 1.0
+  }
+}

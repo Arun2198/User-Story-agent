@@ -1,0 +1,11 @@
+{
+  "name": "injection",
+  "metrics": {
+    "catch_rate": 1.0,
+    "dev.catch_rate": 1.0,
+    "dev.false_positive_rate": 0.0,
+    "false_positive_rate": 0.0,
+    "holdout.catch_rate": 1.0,
+    "holdout.false_positive_rate": 0.0
+  }
+}

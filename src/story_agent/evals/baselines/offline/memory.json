@@ -1,0 +1,14 @@
+{
+  "name": "memory",
+  "metrics": {
+    "contradiction_handling_accuracy": 1.0,
+    "cross_workspace_leaks": 0.0,
+    "default_offer_rate": 0.3209,
+    "false_conflicts": 0.0,
+    "pii_persisted": 0.0,
+    "question_count_reduction": 0.6769,
+    "run_failures": 0.0,
+    "stale_flag_rate": 1.0,
+    "stale_misapplication_rate": 0.0
+  }
+}

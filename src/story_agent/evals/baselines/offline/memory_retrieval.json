@@ -1,0 +1,7 @@
+{
+  "name": "memory_retrieval",
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0
+  }
+}

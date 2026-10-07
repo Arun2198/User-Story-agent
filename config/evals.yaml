@@ -1,5 +1,7 @@
 # Each metric has a min or max. Metrics are checked on every split listed in `enforce`.
 enforce: [all, holdout]
+baseline:
+  tolerance: 0.02   # a metric may get this much worse than its baseline before it counts as a regression
 thresholds:
   redaction:
     precision: { min: 0.95 }
@@ -51,3 +53,64 @@ thresholds:
     invented_number_recall: { min: 1.0 }
     malformed_recall: { min: 1.0 }
     false_flag_rate: { max: 0.05 }
+  app:
+    discovery_recall: { min: 0.9 }
+    question_coverage: { min: 0.9 }
+    redundant_question_rate: { max: 0.1 }
+    rounds_to_readiness: { max: 3 }
+    groundedness: { min: 1.0 }
+    ungrounded_stories: { max: 0, hard: true }
+    hallucination_rate: { max: 0.0 }
+    requirement_coverage: { min: 0.95 }
+    duplicate_rate: { max: 0.05 }
+    invest_score: { min: 0.8 }
+    ac_testability: { min: 0.95 }
+    negative_path_rate: { min: 0.9 }
+    injection_reported_rate: { min: 1.0 }
+    preference_respected_rate: { min: 1.0, optional: true }   # only cases with a free-text preference report it
+    pii_leaks_to_model: { max: 0, hard: true }
+    injection_leaks_to_model: { max: 0, hard: true }
+    pii_in_output: { max: 0, hard: true }
+    run_failures: { max: 0 }
+  app_live:
+    discovery_recall: { min: 0.7 }
+    question_coverage: { min: 0.7 }
+    redundant_question_rate: { max: 0.25 }
+    rounds_to_readiness: { max: 3 }
+    groundedness: { min: 0.95 }
+    ungrounded_stories: { max: 0, hard: true }
+    hallucination_rate: { max: 0.05 }
+    requirement_coverage: { min: 0.9 }
+    duplicate_rate: { max: 0.1 }
+    invest_score: { min: 0.7 }
+    ac_testability: { min: 0.9 }
+    judge_groundedness: { min: 0.75 }
+    judge_completeness: { min: 0.7 }
+    judge_testability: { min: 0.7 }
+    pii_leaks_to_model: { max: 0, hard: true }
+    injection_leaks_to_model: { max: 0, hard: true }
+    pii_in_output: { max: 0, hard: true }
+    run_failures: { max: 0 }
+  memory:
+    question_count_reduction: { min: 0.3 }
+    contradiction_handling_accuracy: { min: 0.9 }
+    stale_flag_rate: { min: 1.0 }
+    false_conflicts: { max: 0 }
+    run_failures: { max: 0 }
+    stale_misapplication_rate: { max: 0.0, hard: true }
+    pii_persisted: { max: 0, hard: true }
+    cross_workspace_leaks: { max: 0, hard: true }
+  stability:
+    items_cv: { max: 0.1 }
+    questions_cv: { max: 0.1 }
+    stories_cv: { max: 0.1 }
+    question_set_jaccard: { min: 0.9 }
+    story_set_jaccard: { min: 0.9 }
+    failed_runs: { max: 0 }
+  stability_live:
+    items_cv: { max: 0.3 }
+    questions_cv: { max: 0.3 }
+    stories_cv: { max: 0.3 }
+    question_set_jaccard: { min: 0.7 }
+    story_set_jaccard: { min: 0.7 }
+    failed_runs: { max: 0 }

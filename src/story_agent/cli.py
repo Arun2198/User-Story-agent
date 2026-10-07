@@ -10,14 +10,20 @@ from typing import Annotated
 
 import typer
 
-from story_agent.config import ConfigError, load_config
+from story_agent.config import ConfigError, default_config_dir, load_config
+from story_agent.discovery.packs import load_packs
+from story_agent.evals.cases import datasets_dir, load_case, save_case, validate_case
+from story_agent.evals.report import to_json, to_markdown
+from story_agent.evals.runner import COMPONENTS, SuiteOptions, run_suite
 from story_agent.memory.recall import is_stale
 from story_agent.memory.store import MemoryStoreError, SqliteMemoryStore, UnsafeContentError
 from story_agent.schema import MemoryEntry, MemoryType, utcnow
 
 app = typer.Typer(no_args_is_help=True, help="Turn scenarios into user stories.")
 memory_app = typer.Typer(no_args_is_help=True, help="Inspect and manage saved memory.")
+evals_app = typer.Typer(no_args_is_help=True, help="Run and extend the evals.")
 app.add_typer(memory_app, name="memory")
+app.add_typer(evals_app, name="evals")
 
 Workspace = Annotated[str, typer.Option("--workspace", "-w", help="Workspace name.")]
 MemoryDir = Annotated[
@@ -151,3 +157,79 @@ def clear_cmd(
     count = store.clear()
     store.close()
     typer.echo(f"cleared {count} entries from workspace '{workspace}'")
+
+
+# ---- evals ---------------------------------------------------------------------
+
+
+@evals_app.command("run")
+def evals_run(  # noqa: PLR0913, PLR0917  (CLI options)
+    component: Annotated[
+        str | None, typer.Option(help=f"One of: {', '.join(COMPONENTS)}, all.")
+    ] = None,
+    app_eval: Annotated[
+        bool, typer.Option("--app", help="End-to-end evals with the simulated user.")
+    ] = False,
+    stability: Annotated[int | None, typer.Option(min=2, help="Repeat each case N times.")] = None,
+    memory: Annotated[bool, typer.Option("--memory", help="Memory off then on, per case.")] = False,
+    live: Annotated[
+        bool, typer.Option(help="Use the real model (needs ANTHROPIC_API_KEY).")
+    ] = False,
+    cases: Annotated[str | None, typer.Option(help="Comma-separated case ids.")] = None,
+    cases_dir: Annotated[Path | None, typer.Option(help="Directory of case files.")] = None,
+    out: Annotated[Path, typer.Option(help="Where to write the reports.")] = Path("eval-reports"),
+    baseline_dir: Annotated[Path | None, typer.Option(help="Baseline directory.")] = None,
+    update_baseline: Annotated[
+        bool, typer.Option(help="Save this run as the new baseline.")
+    ] = False,
+) -> None:
+    """Run evals, write JSON and markdown reports, and exit non-zero on a regression."""
+    options = SuiteOptions(
+        component=component,
+        app=app_eval,
+        stability=stability,
+        memory=memory,
+        live=live,
+        case_ids=[c.strip() for c in cases.split(",")] if cases else None,
+        cases_dir=cases_dir,
+        baseline_dir=baseline_dir,
+        update_baseline=update_baseline,
+        config_dir=default_config_dir(),
+    )
+    try:
+        result = run_suite(options)
+    except (ValueError, ConfigError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "eval-report.json").write_text(to_json(result), encoding="utf-8")
+    (out / "eval-report.md").write_text(to_markdown(result), encoding="utf-8")
+    typer.echo(to_markdown(result))
+    raise typer.Exit(result.exit_code)
+
+
+@evals_app.command("add-case")
+def evals_add_case(
+    file: Path,
+    cases_dir: Annotated[Path | None, typer.Option(help="Where to store the case.")] = None,
+    force: Annotated[bool, typer.Option(help="Replace a case with the same id.")] = False,
+) -> None:
+    """Validate a case file and add it to the dataset (use --force to attach gold stories later)."""
+    config_dir = default_config_dir()
+    try:
+        case = load_case(file)
+        packs = load_packs(config_dir)
+    except (ValueError, OSError, ConfigError) as exc:
+        typer.echo(f"error: cannot read the case: {type(exc).__name__}: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    findings = validate_case(case, packs)
+    for f in findings:
+        typer.echo(f"{f.severity.value}: {f.code}: {f.message}", err=f.severity.value == "error")
+    if any(f.severity.value == "error" for f in findings):
+        raise typer.Exit(1)
+    target = (cases_dir or datasets_dir()) / f"{case.id}.json"
+    if target.exists() and not force:
+        typer.echo(f"error: {target.name} exists; use --force to replace it", err=True)
+        raise typer.Exit(1)
+    path = save_case(case, cases_dir)
+    typer.echo(f"added {case.id} ({len(case.gold_stories)} gold stories) at {path}")

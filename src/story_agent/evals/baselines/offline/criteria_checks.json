@@ -1,0 +1,20 @@
+{
+  "name": "criteria_checks",
+  "metrics": {
+    "accuracy": 1.0,
+    "dev.accuracy": 1.0,
+    "dev.false_flag_rate": 0.0,
+    "dev.invented_number_recall": 1.0,
+    "dev.malformed_recall": 1.0,
+    "dev.vague_recall": 1.0,
+    "false_flag_rate": 0.0,
+    "holdout.accuracy": 1.0,
+    "holdout.false_flag_rate": 0.0,
+    "holdout.invented_number_recall": 1.0,
+    "holdout.malformed_recall": 1.0,
+    "holdout.vague_recall": 1.0,
+    "invented_number_recall": 1.0,
+    "malformed_recall": 1.0,
+    "vague_recall": 1.0
+  }
+}

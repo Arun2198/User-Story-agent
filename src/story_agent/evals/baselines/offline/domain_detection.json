@@ -1,0 +1,17 @@
+{
+  "name": "domain_detection",
+  "metrics": {
+    "dev.domain_accuracy": 0.8889,
+    "dev.subdomain_accuracy": 0.9167,
+    "dev.subpack_precision": 1.0,
+    "dev.subpack_recall": 1.0,
+    "domain_accuracy": 0.9429,
+    "holdout.domain_accuracy": 1.0,
+    "holdout.subdomain_accuracy": 1.0,
+    "holdout.subpack_precision": 1.0,
+    "holdout.subpack_recall": 1.0,
+    "subdomain_accuracy": 0.9565,
+    "subpack_precision": 1.0,
+    "subpack_recall": 1.0
+  }
+}

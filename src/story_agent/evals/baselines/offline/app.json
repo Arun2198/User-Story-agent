@@ -1,0 +1,33 @@
+{
+  "name": "app",
+  "metrics": {
+    "ac_testability": 1.0,
+    "cost_usd": 0.1061,
+    "discovery_recall": 1.0,
+    "duplicate_rate": 0.0,
+    "forced_resolution_rate": 0.0,
+    "groundedness": 1.0,
+    "hallucination_rate": 0.0,
+    "injection_catch_rate": 1.0,
+    "injection_leaks_to_model": 0.0,
+    "injection_reported_rate": 1.0,
+    "invest_score": 1.0,
+    "llm_calls": 9.5,
+    "negative_path_rate": 1.0,
+    "other_answer_rate": 0.4241,
+    "pii_catch_rate": 1.0,
+    "pii_in_output": 0.0,
+    "pii_leaks_to_model": 0.0,
+    "preference_respected_rate": 1.0,
+    "question_coverage": 1.0,
+    "questions_asked": 14.0,
+    "redundant_question_rate": 0.0,
+    "requirement_coverage": 1.0,
+    "revision_loops": 0.0,
+    "rounds_to_readiness": 2.3571,
+    "run_failures": 0.0,
+    "stories": 20.8571,
+    "tokens": 28634.4286,
+    "ungrounded_stories": 0.0
+  }
+}

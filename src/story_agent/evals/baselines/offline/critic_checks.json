@@ -1,0 +1,14 @@
+{
+  "name": "critic_checks",
+  "metrics": {
+    "clean_false_positive_rate": 0.0,
+    "dev.clean_false_positive_rate": 0.0,
+    "dev.precision": 1.0,
+    "dev.recall": 1.0,
+    "holdout.clean_false_positive_rate": 0.0,
+    "holdout.precision": 1.0,
+    "holdout.recall": 1.0,
+    "precision": 1.0,
+    "recall": 1.0
+  }
+}

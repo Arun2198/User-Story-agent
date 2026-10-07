@@ -1,0 +1,8 @@
+{
+  "name": "memory_staleness",
+  "metrics": {
+    "answer_kind_accuracy": 1.0,
+    "stale_flag_accuracy": 1.0,
+    "stale_misapplication_rate": 0.0
+  }
+}

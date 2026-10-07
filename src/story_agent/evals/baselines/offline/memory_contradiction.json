@@ -1,0 +1,8 @@
+{
+  "name": "memory_contradiction",
+  "metrics": {
+    "accuracy": 1.0,
+    "false_conflict_rate": 0.0,
+    "missed_conflict_rate": 0.0
+  }
+}
