@@ -70,6 +70,7 @@ class DiscoverResult:
     findings: list[Finding] = field(default_factory=list)
     usage: Usage = field(default_factory=Usage)
     cost_usd: float = 0.0
+    request: LLMRequest | None = None
 
 
 def render_checklist(checklist: Checklist) -> str:
@@ -126,7 +127,7 @@ def run_discover(
     )
     result = deps.client.complete(request, DiscoverOutput)
     discovery, checklist, findings = build_map(result.value, deps, detection, first, state)
-    return DiscoverResult(discovery, checklist, findings, result.usage, result.cost_usd)
+    return DiscoverResult(discovery, checklist, findings, result.usage, result.cost_usd, request)
 
 
 def build_map(

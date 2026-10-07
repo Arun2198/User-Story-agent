@@ -69,12 +69,17 @@ class RoundResult:
     findings: list[Finding] = field(default_factory=list)
     usage: Usage = field(default_factory=Usage)
     cost_usd: float = 0.0
+    request: LLMRequest | None = None
 
 
 def memory_default(
     category_id: str, entries: Sequence[MemoryEntry], now: datetime | None = None
 ) -> MemoryRef | None:
-    """Return the newest confirmed answer tagged for this category, marked stale past its TTL."""
+    """Return the newest saved answer tagged for this category, marked stale past its TTL.
+
+    Both confirmed answers and NFR defaults count, since answers in NFR categories are
+    saved as NFR defaults.
+    """
     current = now or utcnow()
     tag = f"category:{category_id}"
     matches = [e for e in entries if e.type is MemoryType.CONFIRMED_ANSWER and tag in e.tags]
@@ -225,4 +230,4 @@ def build_round(
             )
         )
     round_ = QuestionRound(number=limits_rounds, questions=questions)
-    return RoundResult(round_, findings, result.usage, result.cost_usd)
+    return RoundResult(round_, findings, result.usage, result.cost_usd, request)

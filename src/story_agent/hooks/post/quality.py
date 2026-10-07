@@ -75,7 +75,8 @@ class CoverageHook:
     phase = HookPhase.POST
 
     def run(self, ctx: HookContext) -> HookResult:
-        """Check every requirement is covered by at least one live story."""
+        """Check every requirement is covered by a story, or left out by a rejected one."""
         if not ctx.state.requirements:
             return passed()
-        return _result(ctx, find_uncovered(_live(ctx), ctx.state.requirements))
+        # A rejected story is an explicit decision to leave its requirements out.
+        return _result(ctx, find_uncovered(ctx.state.stories, ctx.state.requirements))
