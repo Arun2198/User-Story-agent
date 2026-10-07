@@ -61,6 +61,7 @@ from story_agent.schema import (
     AnswerKind,
     Finding,
     HookPhase,
+    ItemStatus,
     MemoryEntry,
     RunState,
     Scenario,
@@ -134,6 +135,30 @@ class Flow:
         )
         state = RunState(run_id=run_id, scenario=scenario)
         return cls(deps, pipeline, services, state, memory)
+
+    @classmethod
+    def restore(
+        cls,
+        deps: StageDeps,
+        pipeline: HookPipeline,
+        state: RunState,
+        runs_dir: Path | None = None,
+        memory: MemoryStore | None = None,
+    ) -> Flow:
+        """Rebuild a flow from saved run state, for a resumed or checkpointed run."""
+        mapping: dict[str, str] = {}
+        saved = runs_dir / state.run_id / "redaction_map.json" if runs_dir else None
+        if saved is not None and saved.exists():
+            mapping = json.loads(saved.read_text(encoding="utf-8"))
+        flow = cls.start(deps, pipeline, state.scenario, state.run_id, runs_dir, memory, mapping)
+        flow.state = state
+        if state.discovery is not None:
+            found = state.discovery
+            flow.checklist = deps.packs.checklist(found.domain, found.subdomain, found.subpacks)
+        if memory is not None:
+            loaded = (memory.get(i) for i in state.recalled_memory_ids)
+            flow.memory_entries = [e for e in loaded if e is not None]
+        return flow
 
     # ---- plumbing -----------------------------------------------------------
 
@@ -269,6 +294,21 @@ class Flow:
     def readiness(self) -> Readiness:
         """Return the readiness summary."""
         return assess(self.state, self._need_checklist())
+
+    def open_optional_categories(self) -> list[str]:
+        """Categories still open that are not must-have. A user may choose to cover them."""
+        checklist = self._need_checklist()
+        if self.state.discovery is None:
+            return []
+        return sorted(
+            {
+                i.category
+                for i in self.state.discovery.items
+                if i.status in {ItemStatus.UNKNOWN, ItemStatus.INFERRED}
+                and i.resolved_by is None
+                and i.category not in checklist.must_have_ids
+            }
+        )
 
     def resolve_remaining(self, kind: AnswerKind) -> list[str]:
         """Record one explicit decision for every unresolved must-have category."""

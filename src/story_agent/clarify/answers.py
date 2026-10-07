@@ -11,7 +11,7 @@ import json
 import re
 from collections.abc import Mapping
 from pathlib import Path
-from typing import NewType
+from typing import Any, NewType
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -232,13 +232,25 @@ class AnswersFile(BaseModel):
     go_ahead: bool = False
 
 
-def load_answers_file(path: Path) -> AnswersFile:
-    """Read a YAML or JSON answers file."""
+def read_answers_data(path: Path) -> dict[str, Any]:
+    """Read a YAML or JSON answers file as a mapping."""
     try:
         text = path.read_text(encoding="utf-8")
         data = json.loads(text) if path.suffix == ".json" else yaml.safe_load(text)
-        return AnswersFile.model_validate(data or {})
-    except (OSError, ValueError, yaml.YAMLError, ValidationError) as exc:
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        raise ConfigError(f"invalid answers file {path}: {type(exc).__name__}") from exc
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ConfigError(f"invalid answers file {path}: expected a mapping")
+    return data
+
+
+def load_answers_file(path: Path) -> AnswersFile:
+    """Read a YAML or JSON answers file."""
+    try:
+        return AnswersFile.model_validate(read_answers_data(path))
+    except ValidationError as exc:
         raise ConfigError(f"invalid answers file {path}: {type(exc).__name__}") from exc
 
 

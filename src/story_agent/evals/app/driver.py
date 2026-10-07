@@ -20,7 +20,7 @@ from story_agent.memory.conflicts import MemoryConflict, detect_conflicts, resol
 from story_agent.memory.proposals import ApplyReport, Proposal
 from story_agent.memory.store import MemoryStore
 from story_agent.pipeline.review import ReviewReport
-from story_agent.schema import AnswerKind, DiscoveryMap, ItemStatus, Question, RunState, Scenario
+from story_agent.schema import AnswerKind, DiscoveryMap, Question, RunState, Scenario
 
 MAX_ROUNDS = 3
 
@@ -73,22 +73,6 @@ def build_deps(
     return StageDeps(StructuredClient(transport, config.models), config, packs, prompts_dir)
 
 
-def _open_optional(flow: Flow) -> list[str]:
-    """Categories that are still open and not must-have."""
-    discovery, checklist = flow.state.discovery, flow.checklist
-    if discovery is None or checklist is None:
-        return []
-    return sorted(
-        {
-            i.category
-            for i in discovery.items
-            if i.status in {ItemStatus.UNKNOWN, ItemStatus.INFERRED}
-            and i.resolved_by is None
-            and i.category not in checklist.must_have_ids
-        }
-    )
-
-
 def run_case(  # noqa: PLR0913, PLR0917  (an end-to-end driver needs these inputs)
     case: EvalCase,
     config: AppConfig,
@@ -127,7 +111,7 @@ def run_case(  # noqa: PLR0913, PLR0917  (an end-to-end driver needs these input
                 if conflict.question_id not in flow.state.conflict_resolutions:
                     resolve_conflict(flow.state, conflict.question_id, "replace")
             record.rounds_to_ready = len(flow.state.rounds)
-            if flow.readiness().ready and not sim.wants_more(_open_optional(flow)):
+            if flow.readiness().ready and not sim.wants_more(flow.open_optional_categories()):
                 break
         if not flow.readiness().ready:
             record.forced_resolutions = len(flow.resolve_remaining(AnswerKind.JUDGMENT))

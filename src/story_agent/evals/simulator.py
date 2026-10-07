@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Any
 
 from story_agent.evals.cases import EvalCase
 from story_agent.memory.proposals import Decision, Proposal
@@ -72,3 +73,37 @@ class SimulatedUser:
     def memory_decisions(self, proposals: Sequence[Proposal]) -> dict[str, Decision]:
         """Approve every proposal."""
         return {p.id: Decision(action="approve") for p in proposals}
+
+
+class SimulatedResponder:
+    """Lets a ``SimulatedUser`` answer the run graph's pauses, like a person would."""
+
+    def __init__(self, user: SimulatedUser) -> None:
+        """Wrap the simulated user."""
+        self.user = user
+
+    def respond(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        """Answer one pause."""
+        kind = payload["kind"]
+        if kind == "answers":
+            questions = [Question.model_validate(q) for q in payload["questions"]]
+            return {
+                "answers": self.user.answers_for(questions),
+                "free_text": self.user.free_text(),
+            }
+        if kind == "conflicts":
+            return {"resolutions": {c["question_id"]: "replace" for c in payload["conflicts"]}}
+        if kind == "gate":
+            more = payload["rounds_used"] < payload["rounds_max"] and self.user.wants_more(
+                payload["open_optional_categories"]
+            )
+            if payload["ready"] and more:
+                decision = "more"
+            else:
+                decision = "go" if payload["ready"] else "judgment"
+            return {"decision": decision, "confirmed_by": "user"}
+        if kind == "review":
+            stories = [Story.model_validate(s) for s in payload["stories"]]
+            return {"actions": [a.model_dump(mode="json") for a in self.user.review(stories)]}
+        decisions = {p["id"]: {"action": "approve"} for p in payload["proposals"]}
+        return {"decisions": decisions}
