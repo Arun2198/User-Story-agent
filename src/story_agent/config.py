@@ -33,7 +33,7 @@ class ModelsConfig(_Cfg):
     judge: str
     base_url: str = "https://integrate.api.nvidia.com/v1"
     api_key_env: str = "NVIDIA_API_KEY"
-    structured_output: Literal["guided_json", "json_schema", "none"] = "guided_json"
+    structured_output: Literal["auto", "guided_json", "json_schema", "none"] = "auto"
     temperature: float | None = None
     max_tokens: int = 4096
     timeout_s: float = 60.0

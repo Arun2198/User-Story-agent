@@ -17,9 +17,12 @@ do not know which provider is behind it.
 - **Settings in config.** `base_url`, `api_key_env`, model ids, temperature, timeout and the
   structured output mode live in `config/models.yaml`. The key is read from the environment
   variable named there (`NVIDIA_API_KEY`), and is only sent in the `Authorization` header.
-- **Structured output.** Default `guided_json` sends the schema in NVIDIA's `nvext.guided_json`.
-  `json_schema` uses `response_format`. `none` puts the schema in the prompt. Whatever the
-  mode, the reply is cleaned (code fences and `<think>` blocks removed), validated against the
+- **Structured output.** Models differ in how the schema can be enforced, and a live check showed
+  `nvidia/nemotron-3.5-lightning-30b-a3b` rejects `nvext.guided_json` (`unknown field`). So the
+  default `auto` tries `guided_json`, then `json_schema` (`response_format`), then `none`
+  (schema in the prompt), moving on only when the model rejects the method, and remembers the
+  first that works for each model. A fixed mode in config skips the trial. Whatever the mode, the
+  reply is cleaned (code fences and `<think>` blocks removed), validated against the
   schema, repaired once, then fails closed, exactly as before.
 - **Temperature 0** is sent, as the original brief asked. Output is still not guaranteed
   identical between calls.

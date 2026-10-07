@@ -18,6 +18,10 @@ from story_agent.config import ModelsConfig
 from story_agent.llm import LLMError, LLMRequest, RawResponse, TransientError, Usage
 
 TRANSIENT_STATUS = {408, 409, 425, 429}
+MODES = ("guided_json", "json_schema", "none")
+_UNSUPPORTED = re.compile(
+    r"guided_json|nvext|response_format|json_schema|unknown field|unsupported|not supported", re.I
+)
 DETAIL_CHARS = 200
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.S)
@@ -28,6 +32,10 @@ def clean_json_text(text: str) -> str:
     text = _THINK.sub("", text).strip()
     fenced = _FENCE.match(text)
     return fenced.group(1) if fenced else text
+
+
+class UnsupportedModeError(LLMError):
+    """The model rejected the way the schema was sent, not the request itself."""
 
 
 class NvidiaTransport:
@@ -41,13 +49,42 @@ class NvidiaTransport:
         self._models = models
         self._client = client or httpx.Client(timeout=models.timeout_s)
         self._url = models.base_url.rstrip("/") + "/chat/completions"
+        self._working: dict[str, str] = {}
+
+    @property
+    def modes(self) -> dict[str, str]:
+        """The structured-output mode that worked for each model so far."""
+        return dict(self._working)
 
     def send(self, request: LLMRequest, json_schema: dict[str, Any]) -> RawResponse:
-        """Call the model and return the parsed JSON object."""
+        """Call the model and return the parsed JSON object.
+
+        With ``structured_output: auto`` a model that rejects one way of sending the schema is
+        retried with the next, and the first that works is remembered for that model.
+        """
+        configured = self._models.structured_output
+        if configured != "auto":
+            return self._send_once(request, json_schema, configured)
+        remembered = self._working.get(request.model)
+        order = [remembered] if remembered else list(MODES)
+        last: UnsupportedModeError | None = None
+        for mode in order:
+            try:
+                raw = self._send_once(request, json_schema, mode)
+            except UnsupportedModeError as exc:
+                last = exc
+                continue
+            self._working[request.model] = mode
+            return raw
+        raise LLMError(f"the model accepted none of the structured output modes: {last}")
+
+    def _send_once(
+        self, request: LLMRequest, json_schema: dict[str, Any], mode: str
+    ) -> RawResponse:
         try:
             response = self._client.post(
                 self._url,
-                json=self._body(request, json_schema),
+                json=self._body(request, json_schema, mode),
                 headers={"Authorization": f"Bearer {self._key}", "Accept": "application/json"},
             )
         except httpx.TimeoutException as exc:
@@ -59,8 +96,7 @@ class NvidiaTransport:
             raise self._error(response.status_code, payload, request.model)
         return self._parse(payload)
 
-    def _body(self, request: LLMRequest, json_schema: dict[str, Any]) -> dict[str, Any]:
-        mode = self._models.structured_output
+    def _body(self, request: LLMRequest, json_schema: dict[str, Any], mode: str) -> dict[str, Any]:
         system = request.system
         if mode == "none":
             schema_text = json.dumps(json_schema)
@@ -106,6 +142,8 @@ class NvidiaTransport:
         if isinstance(error, dict):
             detail = error.get("message") or detail
         text = f" ({str(detail)[:DETAIL_CHARS]})" if detail else ""
+        if status in {400, 422} and _UNSUPPORTED.search(text):
+            return UnsupportedModeError(f"API error {status}{text}")
         if status in TRANSIENT_STATUS or status >= 500:
             return TransientError(f"API error {status}{text}")
         if status in {401, 403}:

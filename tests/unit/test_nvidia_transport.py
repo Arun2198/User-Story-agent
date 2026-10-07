@@ -263,3 +263,118 @@ def test_the_key_is_read_from_the_named_variable() -> None:
         get_api_key("NVIDIA_API_KEY", {})
     with pytest.raises(ConfigError, match="is not set"):
         get_api_key("NVIDIA_API_KEY", {"NVIDIA_API_KEY": "  "})
+
+
+# ---- structured output modes: auto fallback --------------------------------------------
+
+REAL_REJECTION = {
+    "error": {
+        "message": "unknown field `guided_json`, expected one of `greed_sampling`, `use_raw_prompt`",  # noqa: E501
+        "type": "Bad Request",
+        "code": 400,
+    }
+}
+
+
+def mode_of(body: dict[str, Any]) -> str:
+    if "nvext" in body:
+        return "guided_json"
+    if "response_format" in body:
+        return "json_schema"
+    return "none"
+
+
+def run_auto(
+    app_config: AppConfig, accepts: set[str], rejection: dict[str, Any] = REAL_REJECTION
+) -> tuple[NvidiaTransport, list[str]]:
+    tried: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        mode = mode_of(json.loads(req.content))
+        tried.append(mode)
+        if mode in accepts:
+            return httpx.Response(200, json=reply())
+        return httpx.Response(400, json=rejection)
+
+    models = models_with(app_config, structured_output="auto")
+    return transport(models, handler), tried
+
+
+def test_auto_is_the_default_setting(app_config: AppConfig) -> None:
+    assert app_config.models.structured_output == "auto"
+
+
+def test_auto_uses_guided_json_when_the_model_accepts_it(app_config: AppConfig) -> None:
+    t, tried = run_auto(app_config, {"guided_json", "json_schema", "none"})
+    assert t.send(request(app_config.models), SCHEMA).data == {"a": "x"}
+    assert tried == ["guided_json"]
+
+
+def test_auto_falls_back_when_guided_json_is_rejected(app_config: AppConfig) -> None:
+    t, tried = run_auto(app_config, {"json_schema", "none"})
+    assert t.send(request(app_config.models), SCHEMA).data == {"a": "x"}
+    assert tried == ["guided_json", "json_schema"]
+    assert t.modes == {app_config.models.generator: "json_schema"}
+
+
+def test_auto_falls_back_to_the_prompt_as_a_last_resort(app_config: AppConfig) -> None:
+    t, tried = run_auto(app_config, {"none"})
+    t.send(request(app_config.models), SCHEMA)
+    assert tried == ["guided_json", "json_schema", "none"]
+
+
+def test_auto_remembers_the_mode_that_worked(app_config: AppConfig) -> None:
+    t, tried = run_auto(app_config, {"json_schema"})
+    t.send(request(app_config.models), SCHEMA)
+    t.send(request(app_config.models), SCHEMA)
+    assert tried == ["guided_json", "json_schema", "json_schema"]
+
+
+def test_auto_remembers_per_model(app_config: AppConfig) -> None:
+    t, tried = run_auto(app_config, {"json_schema"})
+    t.send(request(app_config.models), SCHEMA)
+    other = LLMRequest("p", "sys", "user", "some/other-model")
+    t.send(other, SCHEMA)
+    assert tried == ["guided_json", "json_schema", "guided_json", "json_schema"]
+    assert set(t.modes) == {app_config.models.generator, "some/other-model"}
+
+
+def test_auto_gives_up_when_no_mode_is_accepted(app_config: AppConfig) -> None:
+    t, tried = run_auto(app_config, set())
+    with pytest.raises(LLMError, match="accepted none"):
+        t.send(request(app_config.models), SCHEMA)
+    assert tried == ["guided_json", "json_schema", "none"]
+
+
+def test_auto_does_not_try_other_modes_for_unrelated_errors(app_config: AppConfig) -> None:
+    tried: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        tried.append(mode_of(json.loads(req.content)))
+        return httpx.Response(401, json={"detail": "Authentication failed"})
+
+    t = transport(models_with(app_config, structured_output="auto"), handler)
+    with pytest.raises(LLMError, match="key was rejected"):
+        t.send(request(app_config.models), SCHEMA)
+    assert tried == ["guided_json"]
+
+
+def test_a_generic_bad_request_is_not_treated_as_a_mode_problem(app_config: AppConfig) -> None:
+    t, tried = run_auto(app_config, set(), {"detail": "max_tokens is too large"})
+    with pytest.raises(LLMError, match="max_tokens is too large") as info:
+        t.send(request(app_config.models), SCHEMA)
+    assert tried == ["guided_json"]
+    assert "accepted none" not in str(info.value)
+
+
+def test_a_fixed_mode_never_falls_back(app_config: AppConfig) -> None:
+    tried: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        tried.append(mode_of(json.loads(req.content)))
+        return httpx.Response(400, json=REAL_REJECTION)
+
+    models = models_with(app_config, structured_output="guided_json")
+    with pytest.raises(LLMError, match="guided_json"):
+        transport(models, handler).send(request(models), SCHEMA)
+    assert tried == ["guided_json"]

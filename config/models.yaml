@@ -3,9 +3,12 @@
 # environment variable named by api_key_env; it is never stored in a file.
 base_url: https://integrate.api.nvidia.com/v1
 api_key_env: NVIDIA_API_KEY
-# guided_json: NVIDIA's nvext.guided_json (recommended). json_schema: response_format.
-# none: the schema is added to the prompt and the reply is checked afterwards.
-structured_output: guided_json
+# How the JSON schema is enforced. Models differ, so the default tries each in turn and keeps
+# the first one the model accepts:
+#   guided_json: NVIDIA's nvext.guided_json     json_schema: OpenAI-style response_format
+#   none: the schema goes in the prompt and the reply is checked afterwards
+# Set one of them here to skip the trial.
+structured_output: auto
 temperature: 0
 # Check both ids against GET /v1/models for your account before a live run (see docs/getting-started.md).
 generator: meta/llama-3.3-70b-instruct
