@@ -1,5 +1,5 @@
 from story_agent.config import AppConfig
-from story_agent.evals.components import injection, redaction, scope_guard
+from story_agent.evals.components import domain_detection, injection, redaction, scope_guard
 from story_agent.evals.components.common import check_thresholds, load_cases, ratio, split_cases
 
 
@@ -18,8 +18,14 @@ def test_scope_guard_eval_meets_thresholds(app_config: AppConfig) -> None:
     assert report.thresholds_met, report.failures
 
 
+def test_domain_detection_eval_meets_thresholds(app_config: AppConfig) -> None:
+    report = domain_detection.run(app_config.evals, app_config.config_dir)
+    assert report.thresholds_met, report.failures
+    assert "domain_accuracy" in report.metrics
+
+
 def test_datasets_have_both_splits_and_both_classes() -> None:
-    for name in ("redaction", "injection", "scope_guard"):
+    for name in ("redaction", "injection", "scope_guard", "domain_detection"):
         cases = load_cases(name)
         assert split_cases(cases, "dev")
         assert split_cases(cases, "holdout")

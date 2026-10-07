@@ -12,3 +12,8 @@ thresholds:
     accuracy: { min: 0.95 }
     false_refusal_rate: { max: 0.0 }
     missed_attack_rate: { max: 0.05 }
+  domain_detection:
+    domain_accuracy: { min: 0.85 }
+    subdomain_accuracy: { min: 0.85 }
+    subpack_precision: { min: 0.9 }
+    subpack_recall: { min: 0.9 }
