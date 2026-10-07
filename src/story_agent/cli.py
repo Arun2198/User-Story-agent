@@ -217,31 +217,22 @@ def models_cmd(
         str | None, typer.Option("--filter", help="Only ids containing this text.")
     ] = None,
 ) -> None:
-    """List the model ids your keys can use, and check the configured generator and judge."""
+    """List the model ids your key can use, and check the configured generator and judge."""
     try:
         config = load_config(default_config_dir())
-        transport = transport_from_env(config.models)
-        main = transport.list_models()
-        checks = {"generator": main, "judge": main}
-        for role in ("generator", "judge"):
-            model = getattr(config.models, role)
-            if model in config.models.model_api_key_env:
-                checks[role] = transport.list_models(model)
+        ids = transport_from_env(config.models).list_models()
     except (ConfigError, LLMError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(EXIT_ERROR) from exc
-    shown = [i for i in main if not filter_ or filter_.casefold() in i.casefold()]
+    shown = [i for i in ids if not filter_ or filter_.casefold() in i.casefold()]
     typer.echo("\n".join(shown))
-    typer.echo(f"{len(shown)} of {len(main)} models")
+    typer.echo(f"{len(shown)} of {len(ids)} models")
     missing = False
-    for role, ids in checks.items():
+    for role in ("generator", "judge"):
         name = getattr(config.models, role)
         ok = name in ids
         missing = missing or not ok
-        variable = config.models.model_api_key_env.get(name, config.models.api_key_env)
-        typer.echo(
-            f"{role}: {name} (key {variable}) {'is available' if ok else 'is NOT in the list'}"
-        )
+        typer.echo(f"{role}: {name} {'is available' if ok else 'is NOT in the list'}")
     if missing:
         raise typer.Exit(EXIT_ERROR)
 

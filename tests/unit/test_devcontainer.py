@@ -12,7 +12,8 @@ def test_the_container_installs_from_the_lockfile() -> None:
 
 
 def test_the_key_is_a_declared_secret_and_never_a_value() -> None:
-    assert {"NVIDIA_API_KEY", "NVIDIA_API_KEY_JUDGE"} <= set(CONFIG["secrets"])
+    assert "NVIDIA_API_KEY" in CONFIG["secrets"]
+    assert "NVIDIA_API_KEY_JUDGE" not in CONFIG["secrets"]
     text = (ROOT / ".devcontainer" / "devcontainer.json").read_text(encoding="utf-8")
     assert "nvapi-" not in text.replace("starts with nvapi-", "")
     for section in ("containerEnv", "remoteEnv"):

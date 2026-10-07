@@ -33,9 +33,6 @@ class ModelsConfig(_Cfg):
     judge: str
     base_url: str = "https://integrate.api.nvidia.com/v1"
     api_key_env: str = "NVIDIA_API_KEY"
-    # A different key for some models, as model id -> environment variable name. A model with no
-    # entry, or whose variable is not set, uses the key from api_key_env.
-    model_api_key_env: dict[str, str] = Field(default_factory=dict)
     structured_output: Literal["auto", "guided_json", "json_schema", "none"] = "auto"
     extra_body: dict[str, dict[str, Any]] = Field(default_factory=dict)
     temperature: float | None = None

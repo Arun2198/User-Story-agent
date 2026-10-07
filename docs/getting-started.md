@@ -61,7 +61,7 @@ export NVIDIA_API_KEY="nvapi-..."            # macOS and Linux
 source scripts/setup_keys.sh
 ```
 
-It asks for the key (and an optional second key for the judge) without showing what you type,
+It asks for the key without showing what you type,
 saves them in a private file in your home folder (`~/.nvidia_env`, readable only by you, outside
 the repository), loads them into this terminal, and makes every new terminal load them too. It
 never prints a key. Run it again to replace a key. Delete `~/.nvidia_env` to remove them.
@@ -71,13 +71,11 @@ The `export` line above does the same for one terminal window only. Where the ke
 | Where you run it | Where to put the key |
 |---|---|
 | Your computer | `export NVIDIA_API_KEY=...` in the terminal (or your shell profile) |
-| GitHub Codespaces | Settings, Codespaces, Secrets, `NVIDIA_API_KEY` (and `NVIDIA_API_KEY_JUDGE` if you have a second key) (Part 2, Option A) |
+| GitHub Codespaces | Settings, Codespaces, Secrets, `NVIDIA_API_KEY` (Part 2, Option A) |
 | A server | The environment of the account that runs it |
 | GitHub Actions | Repository Settings, Secrets, `NVIDIA_API_KEY` |
 
-The judge model can use its own key. Set `NVIDIA_API_KEY_JUDGE` the same way. If it is not set,
-the judge uses `NVIDIA_API_KEY`. Which model uses which variable is in `model_api_key_env` in
-`config/models.yaml`.
+One NVIDIA key works for every model, including the judge, so you only set `NVIDIA_API_KEY`.
 
 Never put the key in a file you commit, a chat or a screenshot. If a key is exposed, revoke it
 in the NVIDIA console and make a new one. To use another variable name, change `api_key_env` in

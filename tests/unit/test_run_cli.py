@@ -549,13 +549,13 @@ def test_models_command_lists_ids_and_checks_the_configured_ones(
 ) -> None:
     monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
     ids = ["other/model", app_config.models.generator, app_config.models.judge]
-    monkeypatch.setattr(NvidiaTransport, "list_models", lambda _self, model=None: sorted(ids))
+    monkeypatch.setattr(NvidiaTransport, "list_models", lambda _self: sorted(ids))
     ok = runner.invoke(app, ["models"])
     assert ok.exit_code == 0, ok.output
-    assert f"generator: {app_config.models.generator} (key NVIDIA_API_KEY)" in ok.output
+    assert f"generator: {app_config.models.generator} is available" in ok.output
     only = runner.invoke(app, ["models", "--filter", "OTHER"])
     assert "1 of 3 models" in only.output
-    monkeypatch.setattr(NvidiaTransport, "list_models", lambda _self, model=None: ["other/model"])
+    monkeypatch.setattr(NvidiaTransport, "list_models", lambda _self: ["other/model"])
     missing = runner.invoke(app, ["models"])
     assert missing.exit_code == 1
     assert "is NOT in the list" in missing.output
@@ -566,26 +566,6 @@ def test_models_command_needs_a_key(monkeypatch: pytest.MonkeyPatch) -> None:
     result = runner.invoke(app, ["models"])
     assert result.exit_code == 1
     assert "NVIDIA_API_KEY is not set" in result.output
-
-
-def test_models_command_checks_the_judge_against_the_judge_key(
-    monkeypatch: pytest.MonkeyPatch, app_config: AppConfig
-) -> None:
-    monkeypatch.setenv("NVIDIA_API_KEY", "main-key")
-    monkeypatch.setenv("NVIDIA_API_KEY_JUDGE", "judge-key")
-    models = app_config.models
-    asked: list[str | None] = []
-
-    def listing(_self: NvidiaTransport, model: str | None = None) -> list[str]:
-        asked.append(model)
-        return [models.judge] if model == models.judge else [models.generator]
-
-    monkeypatch.setattr(NvidiaTransport, "list_models", listing)
-    result = runner.invoke(app, ["models"])
-    assert result.exit_code == 0, result.output
-    assert f"judge: {models.judge} (key NVIDIA_API_KEY_JUDGE) is available" in result.output
-    assert f"generator: {models.generator} (key NVIDIA_API_KEY) is available" in result.output
-    assert models.judge in asked
 
 
 # ---- check ----------------------------------------------------------------------------------
@@ -675,6 +655,5 @@ def test_probe_thinking_breaks_a_tie_on_tokens_by_time(monkeypatch: pytest.Monke
     assert "enable_thinking" not in suggestion
 
 
-def test_the_shipped_config_switches_thinking_off_for_the_generator(app_config: AppConfig) -> None:
-    extra = app_config.models.extra_body[app_config.models.generator]
-    assert extra["chat_template_kwargs"] == {"enable_thinking": False, "thinking": False}
+def test_the_shipped_config_leaves_thinking_on(app_config: AppConfig) -> None:
+    assert app_config.models.extra_body == {}

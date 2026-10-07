@@ -69,11 +69,9 @@ class NvidiaTransport:
         api_key: str,
         models: ModelsConfig,
         client: httpx.Client | None = None,
-        model_keys: Mapping[str, str] | None = None,
     ) -> None:
-        """Keep the settings. ``model_keys`` maps a model id to its own key."""
+        """Keep the settings. ``client`` can be replaced in tests."""
         self._key = api_key
-        self._model_keys = dict(model_keys or {})
         self._models = models
         self._client = client or httpx.Client(timeout=models.timeout_s)
         self._url = models.base_url.rstrip("/") + "/chat/completions"
@@ -114,7 +112,7 @@ class NvidiaTransport:
                 self._url,
                 json=self._body(request, json_schema, mode),
                 headers={
-                    "Authorization": f"Bearer {self._model_keys.get(request.model, self._key)}",
+                    "Authorization": f"Bearer {self._key}",
                     "Accept": "application/json",
                 },
             )
@@ -127,12 +125,11 @@ class NvidiaTransport:
             raise self._error(response.status_code, payload, request.model)
         return self._parse(payload)
 
-    def list_models(self, model: str | None = None) -> list[str]:
-        """Return the model ids a key can use: the key for ``model``, or the default key."""
-        key = self._model_keys.get(model, self._key) if model else self._key
+    def list_models(self) -> list[str]:
+        """Return the model ids the key can use."""
         url = self._models.base_url.rstrip("/") + "/models"
         try:
-            response = self._client.get(url, headers={"Authorization": f"Bearer {key}"})
+            response = self._client.get(url, headers={"Authorization": f"Bearer {self._key}"})
         except httpx.TransportError as exc:
             raise TransientError(f"network error: {type(exc).__name__}") from exc
         payload = self._payload(response)
@@ -236,18 +233,9 @@ class NvidiaTransport:
 def transport_from_env(
     models: ModelsConfig, env: Mapping[str, str] | None = None
 ) -> NvidiaTransport:
-    """Build the transport from config and the environment.
-
-    The main key is required. A model with its own variable in ``model_api_key_env`` uses that
-    key when the variable is set, and the main key otherwise.
-    """
+    """Build the transport from config and the environment variable named by ``api_key_env``."""
     source = os.environ if env is None else env
-    own = {
-        model: source[name].strip()
-        for model, name in models.model_api_key_env.items()
-        if source.get(name, "").strip()
-    }
-    return NvidiaTransport(get_api_key(models.api_key_env, source), models, model_keys=own)
+    return NvidiaTransport(get_api_key(models.api_key_env, source), models)
 
 
 # Request fields that some reasoning models use to skip or shorten their thinking. Which one a

@@ -16,8 +16,7 @@ Model names live in `config/models.yaml` only. At the time of writing:
 
 Both are served by NVIDIA's hosted API (`config/models.yaml`, ADR 0012). Model ids get retired (an earlier choice was, and
 the API answered 410), so check them with `story-agent models` before a live run. The judge is a
-different, larger model than the generator, so it does not mark its own work. It uses its own API
-key (`NVIDIA_API_KEY_JUDGE`), and falls back to the main key if that is not set. Calls use temperature 0 and NVIDIA's guided JSON
+different, larger model than the generator, so it does not mark its own work. It uses the same API key. Calls use temperature 0 and NVIDIA's guided JSON
 output, but output is not guaranteed identical between runs. A response cache, canonical
 ordering and ids set by code carry most of the repeatability, and a stability eval measures
 the rest. The prices in config are nominal numbers for the cost budget, not NVIDIA's billing.

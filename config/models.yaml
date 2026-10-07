@@ -3,25 +3,18 @@
 # environment variable named by api_key_env; it is never stored in a file.
 base_url: https://integrate.api.nvidia.com/v1
 api_key_env: NVIDIA_API_KEY
-# A model can use its own key: model id -> environment variable. If that variable is not set
-# the model uses the key above.
-model_api_key_env:
-  nvidia/nemotron-3-ultra-550b-a55b: NVIDIA_API_KEY_JUDGE
+# One NVIDIA key works for every model, so a single variable is enough.
 # How the JSON schema is enforced. Models differ, so the default tries each in turn and keeps
 # the first one the model accepts:
 #   guided_json: NVIDIA's nvext.guided_json     json_schema: OpenAI-style response_format
 #   none: the schema goes in the prompt and the reply is checked afterwards
 # Set one of them here to skip the trial.
 structured_output: auto
-# Extra request fields per model id, merged into every request for that model. Use it to switch
-# off a reasoning model's thinking if its docs say how, for example:
+# Extra request fields per model id, merged into every request for that model. Thinking is left
+# on, because these models need it to answer well. To switch it off for a model, for example:
 #   extra_body:
 #     nvidia/nemotron-3.5-lightning-30b-a3b: { chat_template_kwargs: { enable_thinking: false } }
-extra_body:
-  # Found with: story-agent check --probe-thinking. Both spellings are sent because models differ;
-  # each alone cut the answer from ~180 tokens to 5.
-  nvidia/nemotron-3.5-lightning-30b-a3b:
-    chat_template_kwargs: { enable_thinking: false, thinking: false }
+extra_body: {}
 temperature: 0
 # Model ids get retired (a 410 error says so). List the live ones with: story-agent models
 # The judge is a different, larger model than the generator, so it does not mark its own work.
