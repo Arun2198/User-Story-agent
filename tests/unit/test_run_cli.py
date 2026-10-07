@@ -1,4 +1,5 @@
 import json
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -654,3 +655,26 @@ def test_probe_thinking_reports_a_rejected_setting(monkeypatch: pytest.MonkeyPat
     stub_transport(monkeypatch, lambda _r: httpx.Response(400, json={"detail": "bad field"}))
     result = runner.invoke(app, ["check", "--probe-thinking"])
     assert "FAILED" in result.output
+
+
+def test_probe_thinking_breaks_a_tie_on_tokens_by_time(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(req: httpx.Request) -> httpx.Response:
+        body = json.loads(req.content)
+        kwargs = body.get("chat_template_kwargs", {})
+        if kwargs == {"enable_thinking": False}:
+            time.sleep(0.2)
+            return httpx.Response(200, json=ok_reply(5))
+        if kwargs == {"thinking": False}:
+            return httpx.Response(200, json=ok_reply(5))
+        return httpx.Response(200, json=ok_reply(300))
+
+    stub_transport(monkeypatch, handler)
+    result = runner.invoke(app, ["check", "--probe-thinking"])
+    suggestion = result.output.split("put this in config/models.yaml")[-1]
+    assert '"thinking": false' in suggestion
+    assert "enable_thinking" not in suggestion
+
+
+def test_the_shipped_config_switches_thinking_off_for_the_generator(app_config: AppConfig) -> None:
+    extra = app_config.models.extra_body[app_config.models.generator]
+    assert extra["chat_template_kwargs"] == {"enable_thinking": False, "thinking": False}

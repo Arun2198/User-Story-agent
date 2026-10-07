@@ -310,7 +310,7 @@ def _probe_thinking(models: ModelsConfig, model: str) -> None:
         )
         if raw.data.get("ok") is True:
             rows.append((raw.usage.output_tokens, seconds, extra))
-    best = min((r for r in rows if r[2]), default=None, key=lambda r: r[0])
+    best = min((r for r in rows if r[2]), default=None, key=lambda r: (r[0], r[1]))
     base = next((r for r in rows if not r[2]), None)
     if best and (base is None or best[0] < base[0]):
         typer.echo(

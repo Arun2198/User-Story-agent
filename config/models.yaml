@@ -17,7 +17,11 @@ structured_output: auto
 # off a reasoning model's thinking if its docs say how, for example:
 #   extra_body:
 #     nvidia/nemotron-3.5-lightning-30b-a3b: { chat_template_kwargs: { enable_thinking: false } }
-extra_body: {}
+extra_body:
+  # Found with: story-agent check --probe-thinking. Both spellings are sent because models differ;
+  # each alone cut the answer from ~180 tokens to 5.
+  nvidia/nemotron-3.5-lightning-30b-a3b:
+    chat_template_kwargs: { enable_thinking: false, thinking: false }
 temperature: 0
 # Model ids get retired (a 410 error says so). List the live ones with: story-agent models
 # The judge is a different, larger model than the generator, so it does not mark its own work.
